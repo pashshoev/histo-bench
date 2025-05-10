@@ -1,4 +1,4 @@
-# pathbench
+# histo-bench
 
 Benchmarking Generalist Vision-Language Models vs. Domain-Specific Foundation Models in Digital Pathology
 
