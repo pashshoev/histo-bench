@@ -7,6 +7,8 @@ features_dir: "data/TCGA-LGG/processed_data_part1/wsi/features/resnet"
 
 #processing
 wsi_file_extension: ".svs"
+
+device: "mps"
 patch_batch_size: 64
 num_workers: 8 # For DataLoader
 

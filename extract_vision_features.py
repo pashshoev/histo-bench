@@ -36,7 +36,7 @@ def get_encoder(config, device):
     return encoder, patch_transforms
 
 
-def run_feature_extraction(config_path: str, verbose: bool = False):
+def run_feature_extraction(config_path: str):
     """
     Executes the feature extraction pipeline for WSIs.
 
@@ -45,7 +45,7 @@ def run_feature_extraction(config_path: str, verbose: bool = False):
         verbose (bool): If True, prints detailed information during processing.
     """
     config = load_config(config_path)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(config["device"])
     encoder, patch_transforms = get_encoder(config, device)
 
     print(f"Device: {device}")
@@ -88,7 +88,7 @@ def run_feature_extraction(config_path: str, verbose: bool = False):
             batch_size=config["patch_batch_size"],
             shuffle=False,
             num_workers=num_workers_to_use,
-            pin_memory=True if torch.cuda.is_available() else False
+            pin_memory=True if device.type != "cpu" else False
         )
         # --- Data accumulation for the current WSI ---
         all_embeddings_for_wsi = []
@@ -96,7 +96,7 @@ def run_feature_extraction(config_path: str, verbose: bool = False):
 
         # Process patches in batches
         for batch in tqdm(patch_loader, desc=f"Extracting features for {wsi_filename}"):
-            batch_patches = batch["patch"]
+            batch_patches = batch["patch"].to(device)
             batch_coordinates = batch["coordinates"]
 
             # Extract embeddings using the encoder
@@ -126,6 +126,6 @@ if __name__ == '__main__':
                         help="Path to the configuration YAML file.")
     args = parser.parse_args()
 
-    run_feature_extraction(args.config, verbose=True)
+    run_feature_extraction(args.config)
     print("\nFeature extraction process completed (demo break applied).")
 

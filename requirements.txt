@@ -1,6 +1,8 @@
 h5py
 PyYAML
 pandas
+dotenv
+
 torch
 torchvision
 pillow
