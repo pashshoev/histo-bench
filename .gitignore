@@ -1,0 +1,7 @@
+.venv/
+.idea/
+CLAM/
+presets/
+data/
+__pycache__/
+.DS_Store

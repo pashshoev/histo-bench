@@ -15,3 +15,20 @@ This project aims to evaluate and compare the performance of general-purpose mul
 
 ## Project Structure
 
+## Installation
+1. `git clone https://github.com/pashshoev/histo-bench.git` to clone repo
+2. `make install_deps` to install dependencies
+3. `make setup_clam` to setup CLAM repo for patch coordinates extraction
+
+## Usage
+1. Download patches from manifest:
+   - `python scripts/data_preparation/download_from_manifest.py
+     -m MANIFEST_FILE \
+     -s START_INDEX \
+-e END_INDEX \
+-d WHERE_TO_DOWNLOAD \
+-D WHERE_TO_MOVE \
+-u FILE_TO_LOG_FAILED_DOWNLOAD_IDS`
+
+2. Extract coordinates using CLAM
+3. Extract features using...

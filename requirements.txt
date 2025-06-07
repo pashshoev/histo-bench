@@ -1,0 +1,7 @@
+h5py
+PyYAML
+pandas
+torch
+torchvision
+pillow
+torchsummary

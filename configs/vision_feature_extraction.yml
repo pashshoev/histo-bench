@@ -1,0 +1,14 @@
+
+# paths
+wsi_dir: "data/TCGA-LGG/raw_data_part1/wsi"
+patches_dir: "data/TCGA-LGG/processed_data_part1/wsi/patches"
+wsi_meta_data_path: "data/TCGA-LGG/processed_data_part1/wsi/process_list_autogen.csv"
+features_dir: "data/TCGA-LGG/processed_data_part1/wsi/features/resnet"
+
+#processing
+wsi_file_extension: ".svs"
+patch_batch_size: 64
+num_workers: 8 # For DataLoader
+
+#model configs
+model_name: "resnet50"
