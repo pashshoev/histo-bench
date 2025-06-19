@@ -2,6 +2,8 @@ h5py
 PyYAML
 pandas
 dotenv
+openslide-python
+openslide-bin
 
 torch
 torchvision
