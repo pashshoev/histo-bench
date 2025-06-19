@@ -21,14 +21,42 @@ This project aims to evaluate and compare the performance of general-purpose mul
 3. `make setup_clam` to setup CLAM repo for patch coordinates extraction
 
 ## Usage
+
+### Feature Extraction
+
+The project provides two approaches for extracting vision features from Whole Slide Images (WSI):
+
+#### Quick Start
+```bash
+# For local processing (requires pre-downloaded data)
+python run_feature_extraction.py --mode local
+
+# For GCS processing (downloads data on-the-fly)
+python run_feature_extraction.py --mode gcs
+```
+
+#### Direct Script Usage
+```bash
+# Local processing
+python extract_vision_features_local.py --config configs/vision_feature_extraction.yml
+
+# GCS processing with concurrent downloading
+python extract_vision_features_batch.py --config configs/vision_feature_extraction_gcs.yml
+```
+
+For detailed information about the feature extraction scripts, see [FEATURE_EXTRACTION_README.md](FEATURE_EXTRACTION_README.md).
+
+### Data Preparation
 1. Download patches from manifest:
-   - `python scripts/data_preparation/download_from_manifest.py
+   ```bash
+   python scripts/data_preparation/download_from_manifest.py \
      -m MANIFEST_FILE \
      -s START_INDEX \
--e END_INDEX \
--d WHERE_TO_DOWNLOAD \
--D WHERE_TO_MOVE \
--u FILE_TO_LOG_FAILED_DOWNLOAD_IDS`
+     -e END_INDEX \
+     -d WHERE_TO_DOWNLOAD \
+     -D WHERE_TO_MOVE \
+     -u FILE_TO_LOG_FAILED_DOWNLOAD_IDS
+   ```
 
 2. Extract coordinates using CLAM
-3. Extract features using...
+3. Extract features using the scripts above

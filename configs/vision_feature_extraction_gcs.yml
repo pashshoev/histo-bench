@@ -1,0 +1,22 @@
+# GCS Configuration
+gcs_bucket_name: "histo-bench"
+gcs_wsi_folder: "TCGA-LGG/wsi/"
+gcs_coordinates_folder: "TCGA-LGG/coordinates/"
+
+# Local paths
+local_wsi_download_dir: "/tmp/wsi/"
+local_coordinates_dir: "/tmp/coordinates/"
+features_dir: "data/TCGA-LGG/features/resnet"
+
+# Processing settings
+wsi_file_extension: ".svs"
+device: "mps"
+patch_batch_size: 64
+num_workers: 8  # For DataLoader
+
+# Concurrent processing settings
+batch_size_wsi_listing: 5
+max_download_workers: 3  # Number of concurrent downloads
+
+# Model configuration
+model_name: "resnet50" 

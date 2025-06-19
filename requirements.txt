@@ -9,3 +9,6 @@ torch
 torchvision
 pillow
 torchsummary
+
+# Google Cloud Storage for GCS-based feature extraction
+google-cloud-storage
