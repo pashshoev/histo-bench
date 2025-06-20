@@ -2,6 +2,7 @@ import argparse
 import os
 import queue
 import time
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from google.cloud import storage
 import h5py
@@ -196,6 +197,38 @@ def download_single_svs_file(bucket_name: str, gcs_file_path: str, local_downloa
         download_queue.put(None)  # Signal failure for this specific download
 
 
+def download_single_svs_file_with_cache_control(bucket_name: str, gcs_file_path: str, local_download_dir: str, download_queue: queue.Queue, cache_semaphore: threading.Semaphore):
+    """
+    Downloads a single .svs file from GCS with cache control.
+    This function waits if the cache is full before downloading.
+    """
+    try:
+        # Acquire semaphore to control cache size
+        cache_semaphore.acquire()
+        
+        os.makedirs(local_download_dir, exist_ok=True)
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+
+        blob_name = gcs_file_path.replace(f"gs://{bucket_name}/", "")
+        blob = bucket.blob(blob_name)
+        destination_file_name = os.path.join(local_download_dir, os.path.basename(blob.name))
+
+        print(f"[DOWNLOAD] Starting download of {blob.name} to {destination_file_name}")
+        blob.download_to_filename(destination_file_name)
+        print(f"[DOWNLOAD] Finished download of {blob.name}")
+
+        # Put the file path in the queue (this will block if queue is full)
+        download_queue.put(destination_file_name)
+        
+    except Exception as e:
+        print(f"[ERROR] Error downloading {gcs_file_path}: {e}")
+        download_queue.put(None)  # Signal failure for this specific download
+    finally:
+        # Always release the semaphore
+        cache_semaphore.release()
+
+
 def get_coordinate_file_path(wsi_filename: str, local_coordinates_dir: str):
     """
     Determines the expected local path of the .h5 coordinate file for a given WSI filename.
@@ -219,11 +252,14 @@ def main_batch_processor(config: dict):
     local_coordinates_dir = config["local_coordinates_dir"]
     batch_size_wsi_listing = config.get("batch_size_wsi_listing", 5)
     max_download_workers = config.get("max_download_workers", 3)
+    max_cache_size = config.get("max_cache_size", 2)  # Maximum files in cache
 
     os.makedirs(local_wsi_download_dir, exist_ok=True)
-    download_queue = queue.Queue()  # Queue to hold paths of downloaded files
+    download_queue = queue.Queue(maxsize=max_cache_size)  # Queue with size limit
+    cache_semaphore = threading.Semaphore(max_cache_size)  # Control cache size
 
     print("\n--- Starting Concurrent WSI Processing ---")
+    print(f"Cache limit: {max_cache_size} files")
 
     # Get total number of files to process for completion check
     storage_client = storage.Client()
@@ -242,11 +278,12 @@ def main_batch_processor(config: dict):
         for batch_gcs_paths in get_wsi_batches_from_gcs(gcs_bucket_name, gcs_wsi_folder, batch_size_wsi_listing):
             for gcs_path in batch_gcs_paths:
                 future = download_executor.submit(
-                    download_single_svs_file,
+                    download_single_svs_file_with_cache_control,
                     gcs_bucket_name,
                     gcs_path,
                     local_wsi_download_dir,
-                    download_queue
+                    download_queue,
+                    cache_semaphore
                 )
                 download_futures.append(future)
 

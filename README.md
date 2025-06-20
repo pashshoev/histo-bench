@@ -31,7 +31,7 @@ The project provides two approaches for extracting vision features from Whole Sl
 # For local processing (requires pre-downloaded data)
 python run_feature_extraction.py --mode local
 
-# For GCS processing (downloads data on-the-fly)
+# For GCS processing (downloads data on-the-fly with cache control)
 python run_feature_extraction.py --mode gcs
 ```
 
@@ -40,11 +40,17 @@ python run_feature_extraction.py --mode gcs
 # Local processing
 python extract_vision_features_local.py --config configs/vision_feature_extraction.yml
 
-# GCS processing with concurrent downloading
+# GCS processing with concurrent downloading and cache control
 python extract_vision_features_batch.py --config configs/vision_feature_extraction_gcs.yml
 ```
 
-For detailed information about the feature extraction scripts, see [FEATURE_EXTRACTION_README.md](FEATURE_EXTRACTION_README.md).
+**GCS Processing Features:**
+- Concurrent downloading and processing
+- Cache control to prevent memory issues (configurable via `max_cache_size`)
+- Automatic cleanup of temporary files
+- No need to pre-download all data
+
+For detailed information about the feature extraction scripts, see the configuration files in `configs/`.
 
 ### Data Preparation
 1. Download patches from manifest:

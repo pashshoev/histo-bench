@@ -17,6 +17,7 @@ num_workers: 8  # For DataLoader
 # Concurrent processing settings
 batch_size_wsi_listing: 5
 max_download_workers: 3  # Number of concurrent downloads
+max_cache_size: 2  # Maximum number of files in cache (prevents memory issues)
 
 # Model configuration
 model_name: "resnet50" 
