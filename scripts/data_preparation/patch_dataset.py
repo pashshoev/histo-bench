@@ -9,18 +9,19 @@ class PatchDatasetFromWSI(Dataset):
     def __init__(self,
                  coordinates_file,
                  wsi_path,
-                 img_transforms):
+                 transform,
+        ):
         """
         Returns patch and respective coordinates for the given wsi
         Args:
             coordinates_file (string): Path to the .h5 file containing patched data.
             wsi_path (string): Path to the WSI file.
-            img_transforms (callable, optional): Optional transform to be applied on a sample
+            transform (callable): Optional transform to be applied on a sample.
         """
         self.coordinates_path = coordinates_file
         self.wsi_path = wsi_path
         self.wsi_obj = None # Will be opened later in __getitem__
-        self.roi_transforms = img_transforms
+        self.transform = transform
 
         with h5py.File(self.coordinates_path, 'r') as hdf5_file:
             self.coordinates = np.array(hdf5_file['coords'])
@@ -46,8 +47,8 @@ class PatchDatasetFromWSI(Dataset):
 
         coordinates = self.coordinates[idx]
         patch = self.wsi_obj.read_region(coordinates, self.patch_level, (self.patch_size, self.patch_size)).convert('RGB')
+        patch = self.transform(patch)
 
-        patch = self.roi_transforms(patch)
         return {'patch': patch, 'coordinates': coordinates}
 
 

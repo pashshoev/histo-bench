@@ -13,7 +13,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from scripts.data_preparation.patch_dataset import PatchDatasetFromWSI
-from scripts.models.vision.resnet import ResNetEncoder, ResNetTransforms
+from scripts.models.vision.resnet import ResNetEncoder
+from scripts.models.vision.uni import UNIEncoder
 
 
 def load_config(config_path):
@@ -25,22 +26,28 @@ def load_config(config_path):
 
 def get_encoder(config, device):
     """
-    Initializes the feature encoder and patch transforms based on the configuration.
+    Initializes the feature encoder and its associated transforms based on the configuration.
 
     Args:
-        config (dict): Configuration dictionary containing model_name.
+        config (dict): Configuration dictionary. Must include:
+                       - "model_name": name of the model (e.g., "resnet50", "UNI")
+                       - For UNI: "checkpoint_path": path to the .bin file
         device (torch.device): The device (CPU or CUDA) to load the model on.
 
     Returns:
-        tuple: A tuple containing the encoder model and its associated transforms.
+        tuple: (encoder, patch_transforms)
     """
-    encoder, patch_transforms = None, None
     if config["model_name"].startswith("resnet"):
-        patch_transforms = ResNetTransforms
         encoder = ResNetEncoder(model_name=config["model_name"], device=device)
+
+    elif config["model_name"] == "UNI":
+        encoder = UNIEncoder(checkpoint_path=config["checkpoint_path"], device=device)
+
     else:
         raise ValueError(f"Model '{config['model_name']}' not supported.")
-    return encoder, patch_transforms
+
+    return encoder, encoder.transform
+
 
 
 def extract_features_for_wsi(patch_loader: DataLoader, encoder, device):
@@ -100,7 +107,7 @@ def process_single_wsi(wsi_filename: str, config: dict):
         config (dict): Dictionary containing paths, model settings, and processing parameters.
     """
     device = torch.device(config["device"])
-    encoder, patch_transforms = get_encoder(config, device)
+    encoder, encoder_transform = get_encoder(config, device)
 
     wsi_path = os.path.join(config["wsi_dir"], wsi_filename)
     coord_filename = wsi_filename.replace(config["wsi_file_extension"], ".h5")
@@ -118,7 +125,7 @@ def process_single_wsi(wsi_filename: str, config: dict):
     patch_dataset = PatchDatasetFromWSI(
         coordinates_file=coord_path,
         wsi_path=wsi_path,
-        img_transforms=patch_transforms
+        transform=encoder_transform,
     )
 
     patch_loader = DataLoader(
