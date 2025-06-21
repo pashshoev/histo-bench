@@ -3,7 +3,7 @@ import os
 import queue
 import time
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from google.cloud import storage
 import h5py
 import numpy as np
@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from scripts.data_preparation.patch_dataset import PatchDatasetFromWSI
+from scripts.models.vision.conch import CONCHEncoder
 from scripts.models.vision.resnet import ResNetEncoder
 from scripts.models.vision.uni import UNIEncoder
 
@@ -39,10 +40,10 @@ def get_encoder(config, device):
     """
     if config["model_name"].startswith("resnet"):
         encoder = ResNetEncoder(model_name=config["model_name"], device=device)
-
     elif config["model_name"] == "UNI":
-        encoder = UNIEncoder(checkpoint_path=config["checkpoint_path"], device=device)
-
+        encoder = UNIEncoder(hf_token=config["hf_token"], device=device)
+    elif config["model_name"].startswith("CONCH"):
+        encoder = CONCHEncoder(hf_token=config["hf_token"], device=device)
     else:
         raise ValueError(f"Model '{config['model_name']}' not supported.")
 

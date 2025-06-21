@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
+from base import BaseEncoder
 
-class ResNetEncoder(nn.Module):
+
+class ResNetEncoder(BaseEncoder, nn.Module):
     """
     ResNet-based encoder using torchvision pretrained models (default: ResNet50).
     Strips classification head and provides built-in preprocessing.
@@ -63,3 +65,23 @@ class ResNetEncoder(nn.Module):
             torch.Tensor: Transformed tensor ready for model input
         """
         return self.transform(pil_image)
+
+    def get_summary(self):
+        """
+        Return model summary including number of parameters and input/output shapes.
+
+        Returns:
+            dict: Contains input shape, output shape, and total parameter count.
+        """
+        input_size = (3, 224, 224)
+        dummy_input = torch.randn(1, *input_size).to(self.device)
+        with torch.no_grad():
+            output = self.model(dummy_input)
+
+        total_params = sum(p.numel() for p in self.model.parameters())
+
+        return {
+            "input_shape": (1, *input_size),
+            "output_shape": tuple(output.shape),
+            "total_parameters": total_params
+        }

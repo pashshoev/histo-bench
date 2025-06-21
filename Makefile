@@ -10,3 +10,5 @@ setup_clam:
 	pip install -r requirements_clam.txt
 	cp -r CLAM/presets ./
 
+install_conch:
+	pip install git+https://github.com/Mahmoodlab/CONCH.git
