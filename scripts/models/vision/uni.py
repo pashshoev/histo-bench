@@ -4,8 +4,8 @@ import torch.nn as nn
 from torchvision import transforms
 import timm
 
-from base import BaseEncoder
 from huggingface_hub import hf_hub_download
+from scripts.models.vision.base import BaseEncoder
 
 
 class UNIEncoder(BaseEncoder, nn.Module):

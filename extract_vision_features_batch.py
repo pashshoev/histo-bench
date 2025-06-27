@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from scripts.data_preparation.patch_dataset import PatchDatasetFromWSI
 from scripts.models.vision.conch import CONCHEncoder
+from scripts.models.vision.plip import PLIPEncoder
 from scripts.models.vision.resnet import ResNetEncoder
 from scripts.models.vision.uni import UNIEncoder
 
@@ -42,8 +43,10 @@ def get_encoder(config, device):
         encoder = ResNetEncoder(model_name=config["model_name"], device=device)
     elif config["model_name"] == "UNI":
         encoder = UNIEncoder(hf_token=config["hf_token"], device=device)
-    elif config["model_name"].startswith("CONCH"):
+    elif config["model_name"]=="CONCH":
         encoder = CONCHEncoder(hf_token=config["hf_token"], device=device)
+    elif config["model_name"]=="PLIP":
+        encoder = PLIPEncoder(device=device)
     else:
         raise ValueError(f"Model '{config['model_name']}' not supported.")
 

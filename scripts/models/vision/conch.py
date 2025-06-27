@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from base import BaseEncoder
+from scripts.models.vision.base import BaseEncoder
 from conch.open_clip_custom import create_model_from_pretrained
 
 
