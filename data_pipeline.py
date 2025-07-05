@@ -1,7 +1,7 @@
 import os
 from tqdm import tqdm
 
-from extract_vision_features import run_feature_extraction
+from extract_vision_features_local import run_feature_extraction
 from scripts.data_preparation.split_gdc_manifest import split_manifest
 from scripts.data_preparation.download_from_manifest import download_and_move
 from scripts.data_preparation.extract_coordinates_clam import  run_clam_coordinate_extraction

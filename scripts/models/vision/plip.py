@@ -21,12 +21,12 @@ class PLIPEncoder(BaseEncoder, nn.Module):
         device (str or torch.device): Device for inference
     """
 
-    def __init__(self, model_name: str = "vinid/plip", device=None):
+    def __init__(self, model_name: str = "vinid/plip",hf_token: str=None, device=None):
         super().__init__()
 
         self.device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = CLIPModel.from_pretrained(model_name).to(self.device)
-        self.processor = CLIPProcessor.from_pretrained(model_name, use_fast=True)
+        self.model = CLIPModel.from_pretrained(model_name, token = hf_token).to(self.device)
+        self.processor = CLIPProcessor.from_pretrained(model_name, token=hf_token, use_fast=True)
         self.transform = PLIPTransform(self.processor)
         self.model.eval()
 

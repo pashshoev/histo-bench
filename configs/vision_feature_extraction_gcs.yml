@@ -2,6 +2,7 @@
 gcs_bucket_name: "histo-bench"
 gcs_wsi_folder: "TCGA-LGG/wsi/"
 gcs_coordinates_folder: "TCGA-LGG/patches/"
+google_application_credentials: "~/.google/google-cloud-key.json"
 
 # Local paths
 local_wsi_download_dir: "/tmp/wsi/"
@@ -20,6 +21,5 @@ batch_size_wsi_listing: 2
 max_cache_size: 2  # Maximum number of files in cache (prevents memory issues)
 
 # Model configuration
-model_name: "resnet50"
-# For UNI
-checkpoint_path: ""
+model_name: "plip"
+hf_token: ""

@@ -9,6 +9,9 @@ torch
 torchvision
 pillow
 torchsummary
+tqdm
+loguru
 
 # Google Cloud Storage for GCS-based feature extraction
 google-cloud-storage
+streamlit

@@ -15,11 +15,10 @@ python scripts/data_preparation/extract_coordinates_clam.py \
 --save_dir data/TCGA-LGG/processed_data_part1/wsi \
 --patch_size 224
 
-python CLAM/create_patches_fp.py \
---source DATA_DIRECTORY \
---save_dir RESULTS_DIRECTORY \
---patch_size 224 
---preset tcga.csv
+python create_patches_fp.py \
+--source ../data/TCGA-LGG/ \
+--save_dir ../data/coords/TCGA-LGG/ \
+--patch_size 512 \
+--preset tcga.csv \
 --seg --patch --stitch
-
 """

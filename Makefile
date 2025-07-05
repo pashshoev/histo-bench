@@ -5,10 +5,8 @@ install_deps:
 	pip install --upgrade pip
 	pip install -r requirements.txt
 
-setup_clam:
-	git clone https://github.com/mahmoodlab/CLAM.git
-	pip install -r requirements_clam.txt
-	cp -r CLAM/presets ./
-
 install_conch:
 	pip install git+https://github.com/Mahmoodlab/CONCH.git
+
+run_ui:
+	PYTHONPATH=. streamlit run ui/1_Home.py
