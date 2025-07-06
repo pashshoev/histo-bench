@@ -44,7 +44,7 @@ def get_encoder(config, device):
     """
     logger.info(f"Loading encoder: {config['model_name']}")
     if config["model_name"].startswith("resnet"):
-        encoder = ResNetEncoder(model_name=config["model_name"], device=device)
+        encoder = ResNetEncoder(device=device)
     elif config["model_name"] == "uni":
         encoder = UNIEncoder(hf_token=config["hf_token"], device=device)
     elif config["model_name"]=="conch":

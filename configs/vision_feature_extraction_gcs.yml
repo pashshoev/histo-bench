@@ -13,7 +13,7 @@ features_dir: "data/TCGA-LGG/features/resnet"
 wsi_file_extension: ".svs"
 device: "cuda"
 patch_batch_size: 64
-num_workers: 2  # For DataLoader
+num_workers: 0  # Recommended to set to 0 
 
 # Concurrent processing settings
 max_download_workers: 3  # Number of concurrent downloads

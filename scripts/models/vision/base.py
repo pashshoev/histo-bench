@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import torch
-
+from enum import Enum
 
 class BaseEncoder(ABC):
     """
@@ -27,3 +27,10 @@ class BaseEncoder(ABC):
     def get_summary(self) -> dict:
         """Return summary: input/output shape, number of parameters, etc."""
         pass
+
+
+class ModelName(Enum):
+    RESNET50 = "ResNet50"
+    UNI = "UNI"
+    CONCH = "CONCH"
+    PLIP = "PLIP"

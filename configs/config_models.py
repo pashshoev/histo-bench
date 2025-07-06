@@ -6,17 +6,19 @@ class VisionFeatureExtractionConfig:
     # Paths
     wsi_dir: str
     coordinates_dir: str
-    wsi_meta_data_path: str
     features_dir: str
+    wsi_meta_data_path: str
 
     # Processing
-    wsi_file_extension: str = ".svs"
     device: str = "mps"
     patch_batch_size: int = 64
-    num_workers: int = 8
-
-    # Model Configs
+    num_workers: int = 2
     model_name: str = "resnet50"
+    hf_token: str = ""
+
+    log_level: str = "INFO"
+
+    disable_progress_bar: bool = False
 
     @classmethod
     def from_yaml(cls, file_path: str) -> "VisionFeatureExtractionConfig":
@@ -27,4 +29,3 @@ class VisionFeatureExtractionConfig:
     def to_yaml(self, file_path: str):
         with open(file_path, "w") as f:
             yaml.safe_dump(asdict(self), f)
-

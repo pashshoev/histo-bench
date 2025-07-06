@@ -1,3 +1,7 @@
+import warnings
+# Suppress timm deprecation warning from conch package - must be at the very top
+warnings.filterwarnings("ignore", category=FutureWarning, message="Importing from timm.models.layers is deprecated")
+
 import torch
 import torch.nn as nn
 

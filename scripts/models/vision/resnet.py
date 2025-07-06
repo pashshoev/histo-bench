@@ -6,21 +6,17 @@ from scripts.models.vision.base import BaseEncoder
 
 class ResNetEncoder(BaseEncoder, nn.Module):
     """
-    ResNet-based encoder using torchvision pretrained models (default: ResNet50).
+    ResNet-based encoder using torchvision pretrained ResNet50 model.
     Strips classification head and provides built-in preprocessing.
 
     Args:
-        model_name (str): Name of ResNet model (e.g., "resnet50").
         device (str or torch.device): Device to load the model on.
     """
 
-    def __init__(self, model_name: str = "resnet50", device=None):
+    def __init__(self, device=None):
         super().__init__()
 
-        if model_name not in models.__dict__:
-            raise ValueError(f"Model '{model_name}' not found in torchvision.models.")
-
-        self.model = models.__dict__[model_name](weights="IMAGENET1K_V1")
+        self.model = models.resnet50(weights="IMAGENET1K_V1")
         self.model = nn.Sequential(*(list(self.model.children())[:-1]))  # Remove FC layer
 
         self.device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")

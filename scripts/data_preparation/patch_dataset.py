@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 import openslide
 from torch.utils.data import Dataset
+from loguru import logger
 
 class PatchDatasetFromWSI(Dataset):
     def __init__(self,
@@ -35,10 +36,11 @@ class PatchDatasetFromWSI(Dataset):
         return self.length
 
     def summary(self):
-        print(f"\t----- DATASET INFO -----\t")
-        print(f"Patch level: {self.patch_level}")
-        print(f"Total patches: {self.length}")
-        print(f"Patch size: {self.patch_size} x {self.patch_size}")
+        logger.info(f"Total patches: {self.length}")
+
+        logger.debug(f"\t----- Slide INFO -----\t")
+        logger.debug(f"Patch level: {self.patch_level}")
+        logger.debug(f"Patch size: {self.patch_size} x {self.patch_size}")
 
     def __getitem__(self, idx):
         # Open the WSI object if it hasn't been opened yet in this process

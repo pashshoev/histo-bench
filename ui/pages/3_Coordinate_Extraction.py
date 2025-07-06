@@ -42,7 +42,7 @@ def get_processing_parameters():
     step_size = st.sidebar.number_input(
         "Step Size (`--step_size`)",
         min_value=1,
-        value=256,
+        value=512,
         step=1,
         help="Step size for sliding window during patching."
     )
@@ -50,7 +50,7 @@ def get_processing_parameters():
     patch_size = st.sidebar.number_input(
         "Patch Size (`--patch_size`)",
         min_value=64,
-        value=256,
+        value=512,
         step=64,
         help="Size of the square patches to extract."
     )
@@ -158,7 +158,7 @@ def run_processing_command(params):
     
     command_parts.extend(["--log_level", params["log_level"].upper()])
 
-    st.info(f"Running command: {' '.join(command_parts)}")
+    st.code(f"Running command: {' '.join(command_parts)}")
 
     with st.expander("Logs"):
         log_placeholder = st.empty()
@@ -185,14 +185,10 @@ def run_processing_command(params):
                 st.balloons()
             else:
                 st.error(f"Segmentation & Patching failed with Exit Code: {return_code}, see logs for details")
-            
-
-    except FileNotFoundError as fnfe:
-        st.error(f"Error: Command '{command_parts[0]}' or script '{command_parts[2]}' not found. "
-                 "Please ensure Python and CLAM/create_patches_fp.py paths are correct and the script exists.")
     except Exception as e:
         st.error(f"An unexpected error occurred during processing: {e}")
         st.exception(e) # Display full traceback for debugging
+
 
 def app():
     st.set_page_config(
