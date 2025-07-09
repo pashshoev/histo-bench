@@ -5,7 +5,7 @@ from torchvision import transforms
 import timm
 
 from huggingface_hub import hf_hub_download
-from scripts.models.vision.base import BaseEncoder
+from scripts.models.vision.base import BaseEncoder, ModelName
 
 
 class UNIEncoder(BaseEncoder, nn.Module):
@@ -38,6 +38,7 @@ class UNIEncoder(BaseEncoder, nn.Module):
         self.device = (
             device if device else ("cuda" if torch.cuda.is_available() else "cpu")
         )
+        self.model_name = ModelName.UNI.value
 
         # Important: UNI checkpoint requires these specific model args
         self.model = timm.create_model(

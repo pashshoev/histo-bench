@@ -1,7 +1,6 @@
 import streamlit as st
-import os
 import subprocess
-import shlex # Good practice for shell commands, though not strictly needed here
+
 
 def get_processing_parameters():
     """
@@ -119,6 +118,7 @@ def get_processing_parameters():
         "log_level": log_level,
         "disable_progress_bar": disable_progress_bar,
     }
+
 
 def run_processing_command(params):
     """

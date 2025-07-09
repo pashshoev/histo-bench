@@ -9,6 +9,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from loguru import logger
 import time
+import torch.nn as nn
+from torchvision import transforms
 from scripts.data_preparation.patch_dataset import (PatchDatasetFromWSI,
                                                     WSIDataset)
 from scripts.models.vision.resnet import ResNetEncoder
@@ -54,7 +56,7 @@ def get_encoder(config, device):
     except Exception as e:
         logger.error(f"Error loading encoder: {e}")
         raise e
-    
+    logger.info(f"Encoder {encoder.model_name} loaded successfully")
     return encoder, encoder.transform
 
 
@@ -107,7 +109,11 @@ def save_features_to_h5(embeddings: np.ndarray, coordinates: np.ndarray, output_
         f.create_dataset('coordinates', data=coordinates, compression="gzip")
 
 
-def process_single_wsi(wsi_filename: str, config: dict):
+def process_single_wsi(wsi_filename: str, 
+                       device: torch.device,
+                       encoder: nn.Module,
+                       patch_transforms: transforms.Compose,
+                       config: dict):
     """
     Full processing pipeline for a single WSI file:
     - Loads the WSI and its patch coordinates.
@@ -117,10 +123,12 @@ def process_single_wsi(wsi_filename: str, config: dict):
 
     Args:
         wsi_filename (str): Filename of the whole slide image.
+        device (torch.device): Device to use for inference.
+        encoder (nn.Module): Feature extractor model.
+        patch_transforms (transforms.Compose): Transformations to apply to patches.
         config (dict): Dictionary containing paths, model settings, and processing parameters.
     """
-    device = torch.device(config["device"])
-    encoder, patch_transforms = get_encoder(config, device)
+
 
     wsi_path = os.path.join(config["wsi_dir"], wsi_filename)
     file_extension = wsi_filename.split(".")[-1]
@@ -180,11 +188,13 @@ def run_feature_extraction(config: dict):
     wsi_dataset = WSIDataset(config["wsi_meta_data_path"])
     logger.info(f"Processing total of {len(wsi_dataset)} slides")
     processing_times = []
+    device = torch.device(config["device"])
+    encoder, patch_transforms = get_encoder(config, device)
     for slide_idx in tqdm(range(len(wsi_dataset)), desc="Processing WSIs", disable=os.environ.get("DISABLE_PROGRESS_BAR", False)):
         logger.info(f"Processing slide ({slide_idx}/{len(wsi_dataset)})")
         wsi_filename = wsi_dataset[slide_idx]
         start_time = time.time()
-        process_single_wsi(wsi_filename, config)
+        process_single_wsi(wsi_filename, device, encoder, patch_transforms, config)
         end_time = time.time()
         processing_times.append(end_time - start_time)
 

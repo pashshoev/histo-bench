@@ -8,3 +8,4 @@ __pycache__/
 __pycache__/
 notebooks
 configs/streamlit_generated_config.yml
+services/

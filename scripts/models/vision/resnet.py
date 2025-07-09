@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
-from scripts.models.vision.base import BaseEncoder
+from scripts.models.vision.base import BaseEncoder, ModelName
 
 
 class ResNetEncoder(BaseEncoder, nn.Module):
@@ -18,7 +18,7 @@ class ResNetEncoder(BaseEncoder, nn.Module):
 
         self.model = models.resnet50(weights="IMAGENET1K_V1")
         self.model = nn.Sequential(*(list(self.model.children())[:-1]))  # Remove FC layer
-
+        self.model_name = ModelName.RESNET50.value
         self.device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.model.eval()

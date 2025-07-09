@@ -31,9 +31,10 @@ start_index = idx_column1.number_input("Start index (-s)", min_value=0, step=1)
 end_index = idx_column2.number_input("End index (-e)", min_value=0, step=1)
 
 # Directory inputs
-download_dir = st.text_input("A temporary directory to download files (-d)", value="tmp/")
-move_dir = st.text_input("A directory to move downloaded files (-D)", value="data/TCGA-LGG/")
-log_file = st.text_input("A file to log failed downloads (-u)", value="tmp/failed_downloads.log")
+download_dir = os.path.join("data", "tmp")
+log_file = os.path.join(download_dir, "failed_downloads.log")
+
+move_dir = st.text_input("Destination directory", value="data/TCGA-LGG/")
 
 
 # Run button
@@ -51,7 +52,13 @@ if st.button("Download"):
                                 destination_dir=move_dir)
                 st.success("Script completed successfully.")
                 st.balloons()
-                st.write(f"Failed downloads: {failed_downloads}")
+
+                if failed_downloads:
+                    st.write(f"Failed downloads: {len(failed_downloads)}")
+                    with open(log_file, "w") as f:
+                        for filename in failed_downloads:
+                            f.write(f"{filename}\n")
+                    st.download_button("Failed downloads", log_file, file_name=log_file)
         except Exception as e:
             st.error("Script failed.")
             st.text(e)

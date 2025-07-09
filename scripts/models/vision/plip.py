@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from transformers import CLIPProcessor, CLIPModel
-from scripts.models.vision.base import BaseEncoder
+from scripts.models.vision.base import BaseEncoder, ModelName
 
 
 class PLIPTransform:
@@ -24,6 +24,7 @@ class PLIPEncoder(BaseEncoder, nn.Module):
     def __init__(self, model_name: str = "vinid/plip",hf_token: str=None, device=None):
         super().__init__()
 
+        self.model_name = ModelName.PLIP.value
         self.device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = CLIPModel.from_pretrained(model_name, token = hf_token).to(self.device)
         self.processor = CLIPProcessor.from_pretrained(model_name, token=hf_token, use_fast=True)

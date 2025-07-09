@@ -5,7 +5,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, message="Importing fro
 import torch
 import torch.nn as nn
 
-from scripts.models.vision.base import BaseEncoder
+from scripts.models.vision.base import BaseEncoder, ModelName
 from conch.open_clip_custom import create_model_from_pretrained
 
 
@@ -27,7 +27,7 @@ class CONCHEncoder(BaseEncoder, nn.Module):
                  repo_path: str = "hf_hub:MahmoodLab/conch"):
         super().__init__()
         self.device = device
-
+        self.model_name = ModelName.CONCH.value
         model, preprocess = create_model_from_pretrained(
             model_id,
             repo_path,
