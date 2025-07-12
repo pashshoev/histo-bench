@@ -1,0 +1,23 @@
+# General Training Settings
+num_epochs: 1
+learning_rate: 0.000001
+random_seed: 42
+device: "mps" # Options: "cuda" (for GPU) or "cpu"
+disable_progress_bar: true # Set to true to hide tqdm progress bars during training/validation
+
+# Model Configuration
+model_name: "ABMIL" # Currently supports "ABMIL"
+num_of_classes: 3 # Number of output classes 
+feature_dim: 2048 # Dimension of the input instance embeddings
+hidden_dim: 256 # Dimension for the intermediate attention layers
+
+# Data Configuration
+metadata_path: "notebooks/training_metadata.csv" # Path to your CSV/Excel file with 'slide_id' and 'label'
+feature_dir: "data/features/resnet" # Path to the directory containing SLIDE_ID.h5 feature files
+validation_size: 0.2 # Proportion of the dataset to use for validation
+batch_size: 1 # Batch size for DataLoader (fixed to 1 for MIL bags)
+num_workers: 0 # Number of subprocesses to use for data loading (set to 0 for debugging)
+
+# Validation Schedule
+validation_rate: 100 # Perform validation every N training batches
+
