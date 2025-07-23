@@ -19,7 +19,7 @@ from scripts.models.MIL.abmil import ABMIL
 from scripts.models.MIL.transmil import TransMIL
 from scripts.models.MIL.mil_dataset import MILDataset, mil_collate_fn, filter_data
 from scripts.models.MIL.mean_pooling import MeanPooling
-
+from scripts.models.MIL.clam import CLAM_MB
 
 # Configure loguru for clean output
 logger.remove()
@@ -71,6 +71,12 @@ def get_model(config: dict) -> torch.nn.Module:
         model = MeanPooling(
             n_classes=config["num_of_classes"],
             in_dim=config["feature_dim"],
+        )
+    elif config["model_name"] == "CLAM_MB":
+        model = CLAM_MB(
+            n_classes=config["num_of_classes"],
+            in_dim=config["feature_dim"],
+            hidden_dim=config["hidden_dim"],
         )
     else:
         raise ValueError(f"Model '{config['model_name']}' not supported.")
@@ -273,7 +279,7 @@ def train(config: dict):
             attention_masks = attention_masks.to(config["device"])
             
             # Forward pass
-            logits = model(patch_features, attention_masks)
+            logits = model(patch_features)
             loss = criterion(logits, slide_labels)
             epoch_loss += loss.item()
             
