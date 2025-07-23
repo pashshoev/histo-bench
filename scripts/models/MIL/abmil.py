@@ -37,7 +37,7 @@ class ABMIL(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.is_norm = is_norm
 
-    def forward(self, x):
+    def forward(self, x, attention_mask=None):
         """
         Forward pass for the ABMIL model.
 
@@ -45,11 +45,13 @@ class ABMIL(nn.Module):
             x (torch.Tensor): Input tensor representing a bag of instance embeddings (h_k).
                               Shape: (batch_size, num_instances, in_dim).
                               (N, K, M) where N=batch_size, K=num_instances, M=in_dim.
+            attention_mask (torch.Tensor, optional): Boolean mask indicating which instances are real (True) vs padded (False).
+                                                   Shape: (batch_size, num_instances). Default is None.
 
         Returns:
             torch.Tensor: Logits for the n_classes.
         """
-        # x shape: (N, K, M) e.g., (1, 1000, 512)
+        # x shape: (N, K, M) e.g., (batch_size, max_patches, 512)
 
         # Compute attention scores
         tanh_Vh = self.tanh_Vh(x) # ->  # (N, K, L)
@@ -57,6 +59,12 @@ class ABMIL(nn.Module):
         gated_attention_features = tanh_Vh * sigmoid_Uh # -> (N, K, L)
         attention_scores = self.attention_weight(gated_attention_features) # -> (N, K, 1)
         A = attention_scores.transpose(1, 2) # -> (N, 1, K)
+
+        # Apply attention mask if provided
+        if attention_mask is not None:
+            attention_mask_expanded = attention_mask.unsqueeze(1)  # (N, K) -> (N, 1, K)
+            # Set attention scores for padded positions to large negative values
+            A = A.masked_fill(~attention_mask_expanded, -1e9)
 
         # Apply softmax across the instances 
         if self.is_norm:
@@ -76,12 +84,22 @@ if __name__ == '__main__':
     attention_hidden_dim = 256
     model = ABMIL(n_classes=3, in_dim=input_embedding_dim, hidden_dim=attention_hidden_dim)
 
-    dummy_data = torch.rand((1, 1000, input_embedding_dim)) 
-    input_size = dummy_data.shape
-    out = model(dummy_data)
+    # Test with batch size > 1 and variable lengths
+    batch_size = 4
+    max_patches = 1000
+    dummy_data = torch.rand((batch_size, max_patches, input_embedding_dim)) 
+    attention_mask = torch.ones(batch_size, max_patches, dtype=torch.bool)
+    # Simulate variable lengths
+    attention_mask[0, 800:] = False  # First sample has 800 patches
+    attention_mask[1, 600:] = False  # Second sample has 600 patches
+    attention_mask[2, 900:] = False  # Third sample has 900 patches
+    attention_mask[3, 700:] = False  # Fourth sample has 700 patches
     
-    print(f"\nInput data shape: {dummy_data.shape}\n")
-
+    input_size = dummy_data.shape
+    out = model(dummy_data, attention_mask)
+    
+    print(f"\nInput data shape: {dummy_data.shape}")
+    print(f"Attention mask shape: {attention_mask.shape}")
     print(f"Output logits shape: {out.shape}\n")
 
     print(summary(model, input_size=input_size))

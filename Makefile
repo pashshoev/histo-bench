@@ -32,3 +32,7 @@ restart: stop run
 push:
 	docker tag $(DOCKER_IMAGE_NAME) pashshoev/histo-bench:latest
 	docker push pashshoev/histo-bench:latest
+
+setup_mlflow:
+	pip install mlflow
+	mlflow server --host 127.0.0.1 --port 5000

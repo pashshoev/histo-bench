@@ -1,6 +1,6 @@
 # General Training Settings
-num_epochs: 1
-learning_rate: 0.000001
+num_epochs: 20
+learning_rate: 0.0005
 random_seed: 42
 device: "mps" # Options: "cuda" (for GPU) or "cpu"
 disable_progress_bar: true # Set to true to hide tqdm progress bars during training/validation
@@ -8,16 +8,29 @@ disable_progress_bar: true # Set to true to hide tqdm progress bars during train
 # Model Configuration
 model_name: "ABMIL" # Currently supports "ABMIL"
 num_of_classes: 3 # Number of output classes 
-feature_dim: 2048 # Dimension of the input instance embeddings
+feature_dim: 1536 # Dimension of the input instance embeddings
 hidden_dim: 256 # Dimension for the intermediate attention layers
+dropout: 0.3 # Dropout rate for the final classifier
 
 # Data Configuration
 metadata_path: "notebooks/training_metadata.csv" # Path to your CSV/Excel file with 'slide_id' and 'label'
-feature_dir: "data/features/resnet" # Path to the directory containing SLIDE_ID.h5 feature files
-validation_size: 0.2 # Proportion of the dataset to use for validation
-batch_size: 1 # Batch size for DataLoader (fixed to 1 for MIL bags)
+feature_dir: "data/features/uni/TCGA/TCGA-LGG" # Path to the directory containing SLIDE_ID.h5 feature files
+validation_size: 0.5 # Proportion of the dataset to use for validation
+batch_size: 8 # Batch size for DataLoader (now supports batching with padding)
 num_workers: 0 # Number of subprocesses to use for data loading (set to 0 for debugging)
 
 # Validation Schedule
 validation_rate: 100 # Perform validation every N training batches
 
+# Class Weights (optional)
+# Uncomment and modify the weights below to handle class imbalance
+# class_weights: [1.0, 2.29, 2.0] # Optimal weights for your distribution: Class 0=16, Class 1=7, Class 2=8
+# The length should match num_of_classes
+# Higher weights = higher penalty for misclassifying that class
+
+# Weighted Sampler (alternative to class weights)
+# Set to true to use WeightedRandomSampler instead of class weights
+# This balances the data during sampling rather than in the loss function
+use_weighted_sampler: false
+
+experiment_name: "TCGA-LGG"

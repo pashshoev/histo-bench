@@ -1,6 +1,5 @@
 .venv/
 .idea/
-presets/
 data/
 __pycache__/
 .DS_Store
@@ -9,3 +8,5 @@ __pycache__/
 notebooks
 configs/streamlit_generated_config.yml
 services/
+mlruns/
+mlartifacts/
