@@ -267,7 +267,7 @@ def train(config: dict):
         epoch_loss = 0
         for patch_features, slide_labels, attention_masks in tqdm(train_dataloader, 
                                                 desc = f"Training Epoch {epoch+1}", 
-                                                disable=config["disable_progress_bar"]):
+                                                disable=False):
             patch_features = patch_features.to(config["device"])
             slide_labels = slide_labels.to(config["device"])
             attention_masks = attention_masks.to(config["device"])
