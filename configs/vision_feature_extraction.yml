@@ -11,7 +11,7 @@ patch_batch_size: 64
 num_workers: 0 # Recommended to set to 0 
 
 #model configs
-model_name: "resnet50"
+model_name: "ResNet50"
 hf_token: ""
 
 #log level

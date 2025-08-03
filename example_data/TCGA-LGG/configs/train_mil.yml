@@ -13,8 +13,8 @@ hidden_dim: 256 # Dimension for the intermediate attention layers
 dropout: 0.3 # Dropout rate for the final classifier
 
 # Data Configuration
-metadata_path: "notebooks/training_metadata.csv" # Path to your CSV/Excel file with 'slide_id' and 'label'
-feature_dir: "data/features/resnet" # Path to the directory containing SLIDE_ID.h5 feature files
+metadata_path: "example_data/TCGA-LGG/training_metadata.csv" # Path to your CSV/Excel file with 'slide_id' and 'label'
+feature_dir: "example_data/TCGA-LGG/features/resnet" # Path to the directory containing SLIDE_ID.h5 feature files
 validation_size: 0.5 # Proportion of the dataset to use for validation
 batch_size: 8 # Batch size for DataLoader (now supports batching with padding)
 num_workers: 0 # Number of subprocesses to use for data loading (set to 0 for debugging)
@@ -34,3 +34,4 @@ validation_rate: 100 # Perform validation every N training batches
 use_weighted_sampler: false
 
 experiment_name: "TCGA-LGG"
+comet_api_key: ""
