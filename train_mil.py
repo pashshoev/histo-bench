@@ -20,6 +20,7 @@ from scripts.models.MIL.transmil import TransMIL
 from scripts.models.MIL.mil_dataset import MILDataset, mil_collate_fn, filter_data
 from scripts.models.MIL.mean_pooling import MeanPooling
 from scripts.models.MIL.clam import CLAM_MB
+from scripts.models.MIL.wikg import WiKG
 
 # Configure loguru for clean output
 logger.remove()
@@ -74,6 +75,12 @@ def get_model(config: dict) -> torch.nn.Module:
         )
     elif config["model_name"] == "CLAM_MB":
         model = CLAM_MB(
+            n_classes=config["num_of_classes"],
+            in_dim=config["feature_dim"],
+            hidden_dim=config["hidden_dim"],
+        )
+    elif config["model_name"] == "WiKG":
+        model = WiKG(
             n_classes=config["num_of_classes"],
             in_dim=config["feature_dim"],
             hidden_dim=config["hidden_dim"],
@@ -211,7 +218,7 @@ def validate(model: torch.nn.Module,
             slide_labels = slide_labels.to(config["device"])
             attention_masks = attention_masks.to(config["device"])
             
-            logits = model(patch_features, attention_masks)
+            logits = model(patch_features)
             loss = criterion(logits, slide_labels)
             predictions = torch.argmax(logits, dim=1).cpu().numpy()
             all_predictions.append(predictions)
