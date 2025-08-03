@@ -1,0 +1,12 @@
+.venv/
+.idea/
+data/
+__pycache__/
+.DS_Store
+**/.DS_Store
+__pycache__/
+notebooks
+configs/streamlit_generated_config.yml
+services/
+mlruns/
+mlartifacts/

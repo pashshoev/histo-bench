@@ -1,0 +1,25 @@
+# GCS Configuration
+gcs_bucket_name: "histo-bench"
+gcs_wsi_folder: "TCGA-LGG/wsi/"
+gcs_coordinates_folder: "TCGA-LGG/patches/"
+google_application_credentials: "~/.google/google-cloud-key.json"
+
+# Local paths
+local_wsi_download_dir: "/tmp/wsi/"
+local_coordinates_dir: "/tmp/coordinates/"
+features_dir: "data/TCGA-LGG/features/resnet"
+
+# Processing settings
+wsi_file_extension: ".svs"
+device: "cuda"
+patch_batch_size: 64
+num_workers: 0  # Recommended to set to 0 
+
+# Concurrent processing settings
+max_download_workers: 3  # Number of concurrent downloads
+batch_size_wsi_listing: 2
+max_cache_size: 2  # Maximum number of files in cache (prevents memory issues)
+
+# Model configuration
+model_name: "plip"
+hf_token: ""
