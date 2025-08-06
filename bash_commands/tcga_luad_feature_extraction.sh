@@ -46,7 +46,7 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $((END_INDEX - 1))); do
     PYTHONPATH=. python -u CLAM/create_patches_fp.py \
         --source "$DATA_DIR/slides" \
         --save_dir "$DATA_DIR/coordinates" \
-        --preset "CLAM/presets/tcga.csv
+        --preset "CLAM/presets/tcga.csv" \
         --patch_size 512 \
         --step_size 512 \
         --patch_level 0 \
