@@ -16,7 +16,7 @@ HF_TOKEN="hf_..."
 SLIDES_TO_PROCESS=$((END_INDEX - START_INDEX + 1))
 NUM_BATCHES=$(( (SLIDES_TO_PROCESS + BATCH_SIZE - 1) / BATCH_SIZE ))
 
-echo "[MAIN] PROCESSING SLIDES $START_INDEX-$END_INDEX ($SLIDES_TO_PROCESS slides) in $NUM_BATCHES batches of $BATCH_SIZE each"
+echo "[MAIN] PROCESSING SLIDES [$START_INDEX-$END_INDEX) ($SLIDES_TO_PROCESS slides) in $NUM_BATCHES batches of $BATCH_SIZE each"
 
 # Iterate over start indices with step size of BATCH_SIZE (matching Python range pattern)
 for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
@@ -38,6 +38,8 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
         -s "$start_idx" \
         -e "$end_idx" \
         -D "$DATA_DIR/slides"
+    echo "[MAIN] Download completed. Waiting 5 seconds..."
+    sleep 5
     
     # 2. Create patches
     echo "[MAIN] CREATING PATCHES..."
@@ -49,6 +51,8 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
         --patch_level 0 \
         --seg --patch --stitch \
         --log_level INFO
+    echo "[MAIN] Patch creation completed. Waiting 5 seconds..."
+    sleep 5
     
     # 3. Extract features
     echo "[MAIN] EXTRACTING FEATURES..."
@@ -56,23 +60,29 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
         --wsi_dir "$DATA_DIR/slides" \
         --coordinates_dir "$DATA_DIR/coordinates/patches" \
         --wsi_meta_data_path "$DATA_DIR/coordinates/process_list_autogen.csv" \
-        --features_dir "$DATA_DIR/features/resnet" \
+        --features_dir "$DATA_DIR/features/$MODEL_NAME" \
         --device "$DEVICE" \
         --patch_batch_size 32 \
         --num_workers 12 \
         --model_name "$MODEL_NAME" \
         --hf_token $HF_TOKEN
+    echo "[MAIN] Feature extraction completed. Waiting 5 seconds..."
+    sleep 5
     
     # 4. Upload features and coordinates to GCS
     echo "[MAIN] UPLOADING TO GOOGLE CLOUD STORAGE..."
-    gcloud storage cp --recursive "$DATA_DIR/features/resnet/"* "$GCS_BUCKET/features/"
+    gcloud storage cp --recursive "$DATA_DIR/features/$MODEL_NAME/"* "$GCS_BUCKET/features/$MODEL_NAME/"
     gcloud storage cp --recursive "$DATA_DIR/coordinates/patches/"* "$GCS_BUCKET/patches/"
+    echo "[MAIN] GCS upload completed. Waiting 5 seconds..."
+    sleep 5
     
     # 5. Remove local slides, coordinates and features
     echo "[MAIN] CLEANING UP LOCAL FILES..."
     rm -rf "$DATA_DIR/slides"
     rm -rf "$DATA_DIR/coordinates"
     rm -rf "$DATA_DIR/features"
+    echo "[MAIN] Cleanup completed. Waiting 5 seconds..."
+    sleep 5
     
     echo "=== Batch $current_batch completed ==="
     echo ""
