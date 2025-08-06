@@ -1,7 +1,7 @@
 # TCGA Processing
 ## Prerequisites
-- installed gdc-client
-- downloaded manifest file
+- installed gdc-client (use `bash_commands/install_gdc_ubuntu.sh`)
+- downloaded manifest file (find samples in `example_data/` folder)
 ### Step 1: Download slides from TCGA using manifest
 ``` 
 python scripts/data_preparation/download_from_manifest.py \
