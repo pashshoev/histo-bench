@@ -11,14 +11,14 @@ GCS_BUCKET="gs://histo-bench/TCGA-Lung"
 DEVICE="cuda"
 MODEL_NAME="ResNet50"
 
-# Calculate number of batches
+# Calculate number of batches for display
 SLIDES_TO_PROCESS=$((END_INDEX - START_INDEX + 1))
 NUM_BATCHES=$(( (SLIDES_TO_PROCESS + BATCH_SIZE - 1) / BATCH_SIZE ))
 
 echo "Processing slides $START_INDEX-$END_INDEX ($SLIDES_TO_PROCESS slides) in $NUM_BATCHES batches of $BATCH_SIZE each"
 
-for batch in $(seq 0 $((NUM_BATCHES - 1))); do
-    start_idx=$((START_INDEX + batch * BATCH_SIZE))
+# Iterate over start indices with step size of BATCH_SIZE (matching Python range pattern)
+for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
     end_idx=$((start_idx + BATCH_SIZE - 1))
     
     # Ensure end_idx doesn't exceed the specified end index
@@ -26,7 +26,9 @@ for batch in $(seq 0 $((NUM_BATCHES - 1))); do
         end_idx=$END_INDEX
     fi
     
-    echo "=== Processing batch $((batch + 1))/$NUM_BATCHES (slides $start_idx-$end_idx) ==="
+    # Calculate current batch number for display
+    current_batch=$(( (start_idx - START_INDEX) / BATCH_SIZE + 1 ))
+    echo "=== Processing batch $current_batch/$NUM_BATCHES (slides $start_idx-$end_idx) ==="
     
     # 1. Download slides for this batch
     echo "Downloading slides $start_idx-$end_idx..."
@@ -71,7 +73,7 @@ for batch in $(seq 0 $((NUM_BATCHES - 1))); do
     rm -rf "$DATA_DIR/coordinates"
     rm -rf "$DATA_DIR/features"
     
-    echo "=== Batch $((batch + 1)) completed ==="
+    echo "=== Batch $current_batch completed ==="
     echo ""
 done
 
