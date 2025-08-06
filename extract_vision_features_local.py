@@ -76,9 +76,11 @@ def extract_features_for_wsi(patch_loader: DataLoader, encoder, device):
     all_coordinates = []
     batch_idx = 0
     for batch in tqdm(patch_loader, desc="Extracting features", disable=os.environ.get("DISABLE_PROGRESS_BAR", False)):
-        batch_idx += 1
-        if batch_idx % 1 == 0:
-            logger.info(f"Extracting features for batch {batch_idx}/{len(patch_loader)}")
+        
+        # TODO: Fix this first
+        # batch_idx += 1
+        # if batch_idx % 1 == 0:
+        #     logger.info(f"Extracting features for batch {batch_idx}/{len(patch_loader)}")
 
         patches = batch["patch"].to(device)
         coords = batch["coordinates"]
@@ -182,7 +184,8 @@ def run_feature_extraction(config: dict):
     logger.remove()
     logger.add(sys.stderr, level=config["log_level"].upper(), format="{time:YYYY-MM-DD HH:mm:ss} | {message}") 
 
-    os.environ["DISABLE_PROGRESS_BAR"] = str(config["disable_progress_bar"])
+    # TODO: Fix this first
+    # os.environ["DISABLE_PROGRESS_BAR"] = str(config["disable_progress_bar"])
 
 
     wsi_dataset = WSIDataset(config["wsi_meta_data_path"])

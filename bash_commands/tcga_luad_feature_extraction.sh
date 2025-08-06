@@ -10,16 +10,17 @@ DATA_DIR="data/TCGA-LUAD"
 GCS_BUCKET="gs://histo-bench/TCGA-Lung"
 DEVICE="cuda"
 MODEL_NAME="ResNet50"
+HF_TOKEN="hf_..."
 
 # Calculate number of batches for display
 SLIDES_TO_PROCESS=$((END_INDEX - START_INDEX + 1))
 NUM_BATCHES=$(( (SLIDES_TO_PROCESS + BATCH_SIZE - 1) / BATCH_SIZE ))
 
-echo "Processing slides $START_INDEX-$END_INDEX ($SLIDES_TO_PROCESS slides) in $NUM_BATCHES batches of $BATCH_SIZE each"
+echo "[MAIN] PROCESSING SLIDES $START_INDEX-$END_INDEX ($SLIDES_TO_PROCESS slides) in $NUM_BATCHES batches of $BATCH_SIZE each"
 
 # Iterate over start indices with step size of BATCH_SIZE (matching Python range pattern)
 for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
-    end_idx=$((start_idx + BATCH_SIZE - 1))
+    end_idx=$((start_idx + BATCH_SIZE))
     
     # Ensure end_idx doesn't exceed the specified end index
     if [ $end_idx -gt $END_INDEX ]; then
@@ -28,10 +29,10 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
     
     # Calculate current batch number for display
     current_batch=$(( (start_idx - START_INDEX) / BATCH_SIZE + 1 ))
-    echo "=== Processing batch $current_batch/$NUM_BATCHES (slides $start_idx-$end_idx) ==="
+    echo "=== PROCESSING BATCH $current_batch/$NUM_BATCHES (slides $start_idx-$end_idx) ==="
     
     # 1. Download slides for this batch
-    echo "Downloading slides $start_idx-$end_idx..."
+    echo "[MAIN] DOWNLOADING SLIDES $start_idx-$end_idx..."
     python scripts/data_preparation/download_from_manifest.py \
         -m "$MANIFEST_FILE" \
         -s "$start_idx" \
@@ -39,7 +40,7 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
         -D "$DATA_DIR/slides"
     
     # 2. Create patches
-    echo "Creating patches..."
+    echo "[MAIN] CREATING PATCHES..."
     PYTHONPATH=. python -u CLAM/create_patches_fp.py \
         --source "$DATA_DIR/slides" \
         --save_dir "$DATA_DIR/coordinates" \
@@ -50,7 +51,7 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
         --log_level INFO
     
     # 3. Extract features
-    echo "Extracting features..."
+    echo "[MAIN] EXTRACTING FEATURES..."
     python extract_vision_features_local.py \
         --wsi_dir "$DATA_DIR/slides" \
         --coordinates_dir "$DATA_DIR/coordinates/patches" \
@@ -60,15 +61,15 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
         --patch_batch_size 32 \
         --num_workers 12 \
         --model_name "$MODEL_NAME" \
-        --hf_token
+        --hf_token $HF_TOKEN
     
     # 4. Upload features and coordinates to GCS
-    echo "Uploading to Google Cloud Storage..."
+    echo "[MAIN] UPLOADING TO GOOGLE CLOUD STORAGE..."
     gcloud storage cp --recursive "$DATA_DIR/features/resnet/"* "$GCS_BUCKET/features/"
     gcloud storage cp --recursive "$DATA_DIR/coordinates/patches/"* "$GCS_BUCKET/patches/"
     
     # 5. Remove local slides, coordinates and features
-    echo "Cleaning up local files..."
+    echo "[MAIN] CLEANING UP LOCAL FILES..."
     rm -rf "$DATA_DIR/slides"
     rm -rf "$DATA_DIR/coordinates"
     rm -rf "$DATA_DIR/features"
