@@ -47,7 +47,7 @@ class MILDataset(Dataset):
                 pass
                 logger.warning(f"Feature file not found for slide_id: {slide_id} at {h5_path}. Skipping.")
         df = pd.DataFrame(self.data_info)
-        logger.info(f"Labels distribution:\n{df['label'].value_counts()}")
+        logger.info(f"Labels distribution:\n{df['label'].value_counts().sort_index()}")
 
     def __len__(self):
         # Returns the total number of bags (slides) in the dataset

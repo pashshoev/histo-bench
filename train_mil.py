@@ -11,7 +11,8 @@ from tqdm import tqdm
 from loguru import logger
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, roc_auc_score
+from torch.nn.functional import softmax
 import matplotlib.pyplot as plt
 import mlflow
 
@@ -211,7 +212,9 @@ def validate(model: torch.nn.Module,
     model.eval()
     all_predictions = []
     all_labels = []
+    all_probs = []
     all_losses = []
+
     with torch.no_grad():
         for patch_features, slide_labels, attention_masks in tqdm(data_loader, desc="Validating...", disable=config["disable_progress_bar"]):
             patch_features = patch_features.to(config["device"])
@@ -220,23 +223,36 @@ def validate(model: torch.nn.Module,
             
             logits = model(patch_features)
             loss = criterion(logits, slide_labels)
-            predictions = torch.argmax(logits, dim=1).cpu().numpy()
+
+            probs = softmax(logits, dim=1).cpu().numpy()
+            predictions = np.argmax(probs, axis=1)
+
             all_predictions.append(predictions)
             all_labels.append(slide_labels.cpu().numpy())
+            all_probs.append(probs)
             all_losses.append(loss.item())
-    
+
     average_loss = np.mean(all_losses)
-    # Concatenate all predictions and labels before passing to classification_report
     all_predictions_np = np.concatenate(all_predictions, axis=0)
     all_labels_np = np.concatenate(all_labels, axis=0)
+    all_probs_np = np.concatenate(all_probs, axis=0)
 
-    report = classification_report(all_labels_np, all_predictions_np, zero_division=0)
+    report = classification_report(all_labels_np, all_predictions_np, zero_division=0, output_dict=True)
+
+    # AUC (macro/micro) — requires one-hot encoded labels
+    num_classes = all_probs_np.shape[1]
+    labels_onehot = np.eye(num_classes)[all_labels_np]
+
+    auc_macro = roc_auc_score(labels_onehot, all_probs_np, average='macro', multi_class='ovr')
+    auc_micro = roc_auc_score(labels_onehot, all_probs_np, average='micro', multi_class='ovr')
+
     result = {
         "report": report,
-        "loss": average_loss
+        "loss": average_loss,
+        "auc_macro": auc_macro,
+        "auc_micro": auc_micro
     }
     return result
-
 
 def train(config: dict):
     set_seed(config)
@@ -303,6 +319,8 @@ def train(config: dict):
         logger.info(f"Losses: train = {avg_train_loss:.10f}, val = {val_result['loss']:.4f}")
         
         exp.log_metrics({"train_loss": avg_train_loss, "val_loss": val_result["loss"]}, epoch=epoch)
+        exp.log_metrics({"auc_macro": val_result["auc_macro"], "auc_micro": val_result["auc_micro"]}, epoch=epoch)
+        exp.log_metrics(val_result["report"], epoch=epoch)
         
         history["losses"]["train"].append(avg_train_loss)
         history["losses"]["val"].append(val_result["loss"])
