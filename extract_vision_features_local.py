@@ -197,7 +197,7 @@ def run_feature_extraction(config: dict):
         process_single_wsi(wsi_filename, device, encoder, patch_transforms, config)
         end_time = time.time()
         processing_times.append(end_time - start_time)
-
+        logger.info(f"Processing time: {end_time - start_time} seconds")
     
     logger.info(f"Average processing time per slide: {np.mean(processing_times).round(3)} seconds")
 
