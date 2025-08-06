@@ -202,14 +202,79 @@ def run_feature_extraction(config: dict):
     logger.info(f"Average processing time per slide: {np.mean(processing_times).round(3)} seconds")
 
 
+def build_config_from_args(args):
+    """
+    Builds a configuration dictionary from command-line arguments.
+    
+    Args:
+        args: Parsed command-line arguments
+        
+    Returns:
+        dict: Configuration dictionary
+    """
+    config = {
+        "wsi_dir": args.wsi_dir,
+        "coordinates_dir": args.coordinates_dir,
+        "wsi_meta_data_path": args.wsi_meta_data_path,
+        "features_dir": args.features_dir,
+        "device": args.device,
+        "patch_batch_size": args.patch_batch_size,
+        "num_workers": args.num_workers,
+        "model_name": args.model_name,
+        "hf_token": args.hf_token,
+        "log_level": args.log_level,
+        "disable_progress_bar": args.disable_progress_bar
+    }
+    return config
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run WSI feature extraction.")
 
-    parser.add_argument("--config", type=str, default="configs/vision_feature_extraction.yml",
-                        help="Path to the configuration YAML file.")
-    args = parser.parse_args()  
-    config = load_config(args.config)
+    # Config file argument (optional)
+    parser.add_argument("--config", type=str, default=None,
+                        help="Path to the configuration YAML file. If not provided, individual arguments will be used.")
+
+    # Path arguments
+    parser.add_argument("--wsi_dir", type=str, default="example_data/TCGA-Lung/slides",
+                        help="Directory containing WSI files")
+    parser.add_argument("--coordinates_dir", type=str, default="example_data/TCGA-Lung/coordinates/patches",
+                        help="Directory containing coordinate files")
+    parser.add_argument("--wsi_meta_data_path", type=str, default="example_data/TCGA-Lung/coordinates/process_list_autogen.csv",
+                        help="Path to WSI metadata CSV file")
+    parser.add_argument("--features_dir", type=str, default="example_data/TCGA-Lung/features/resnet",
+                        help="Directory to save extracted features")
+
+    # Processing arguments
+    parser.add_argument("--device", type=str, default="cpu",
+                        help="Device to use for processing (cpu/cuda)")
+    parser.add_argument("--patch_batch_size", type=int, default=128,
+                        help="Batch size for patch processing")
+    parser.add_argument("--num_workers", type=int, default=0,
+                        help="Number of workers for data loading")
+
+    # Model arguments
+    parser.add_argument("--model_name", type=str, default="ResNet50",
+                        help="Name of the model to use for feature extraction")
+    parser.add_argument("--hf_token", type=str, default="",
+                        help="Hugging Face token for model access")
+
+    # Logging arguments
+    parser.add_argument("--log_level", type=str, default="DEBUG",
+                        help="Logging level")
+    parser.add_argument("--disable_progress_bar", action="store_true",
+                        help="Disable progress bars")
+
+    args = parser.parse_args()
+    
+    # Load config from file if provided, otherwise build from arguments
+    if args.config is not None:
+        config = load_config(args.config)
+        logger.info(f"Loaded configuration from: {args.config}")
+    else:
+        config = build_config_from_args(args)
+        logger.info("Built configuration from command-line arguments")
+    
     run_feature_extraction(config)
     logger.info("Feature extraction process completed.")
 
