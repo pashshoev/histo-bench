@@ -13,13 +13,13 @@ MODEL_NAME="ResNet50"
 HF_TOKEN="hf_..."
 
 # Calculate number of batches for display
-SLIDES_TO_PROCESS=$((END_INDEX - START_INDEX + 1))
+SLIDES_TO_PROCESS=$((END_INDEX - START_INDEX))
 NUM_BATCHES=$(( (SLIDES_TO_PROCESS + BATCH_SIZE - 1) / BATCH_SIZE ))
 
 echo "[MAIN] PROCESSING SLIDES [$START_INDEX-$END_INDEX) ($SLIDES_TO_PROCESS slides) in $NUM_BATCHES batches of $BATCH_SIZE each"
 
 # Iterate over start indices with step size of BATCH_SIZE (matching Python range pattern)
-for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
+for start_idx in $(seq $START_INDEX $BATCH_SIZE $((END_INDEX - 1))); do
     end_idx=$((start_idx + BATCH_SIZE))
     
     # Ensure end_idx doesn't exceed the specified end index
@@ -46,6 +46,7 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $END_INDEX); do
     PYTHONPATH=. python -u CLAM/create_patches_fp.py \
         --source "$DATA_DIR/slides" \
         --save_dir "$DATA_DIR/coordinates" \
+        --preset "CLAM/presets/tcga.csv
         --patch_size 512 \
         --step_size 512 \
         --patch_level 0 \
