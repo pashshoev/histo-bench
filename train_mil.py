@@ -50,6 +50,120 @@ def parse_args():
         default="configs/train_mil.yml",
         help="Path to the configuration YAML file.",
     )
+    # Hyperparameters as CLI arguments
+    parser.add_argument(
+        "--num_epochs",
+        type=int,
+        default=2,
+        help="Number of training epochs"
+    )
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=0.0005,
+        help="Learning rate for training"
+    )
+    parser.add_argument(
+        "--hidden_dim",
+        type=int,
+        default=256,
+        help="Dimension for the intermediate attention layers"
+    )
+    parser.add_argument(
+        "--dropout",
+        type=float,
+        default=0.3,
+        help="Dropout rate for the final classifier"
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=8,
+        help="Batch size for DataLoader"
+    )
+    parser.add_argument(
+        "--validation_size",
+        type=float,
+        default=0.5,
+        help="Proportion of the dataset to use for validation"
+    )
+    # Additional parameters from config
+    parser.add_argument(
+        "--random_seed",
+        type=int,
+        default=42,
+        help="Random seed for reproducibility"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="mps",
+        help="Device to use (cuda, cpu, mps)"
+    )
+    parser.add_argument(
+        "--disable_progress_bar",
+        action="store_true",
+        help="Disable progress bars during training/validation"
+    )
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default="ABMIL",
+        help="Model name (ABMIL, TransMIL, MeanPooling, CLAM_MB, WiKG)"
+    )
+    parser.add_argument(
+        "--num_of_classes",
+        type=int,
+        default=3,
+        help="Number of output classes"
+    )
+    parser.add_argument(
+        "--feature_dim",
+        type=int,
+        default=1536,
+        help="Dimension of the input instance embeddings"
+    )
+    parser.add_argument(
+        "--metadata_path",
+        type=str,
+        default="example_data/TCGA-LGG/training_metadata.csv",
+        help="Path to CSV/Excel file with slide_id and label"
+    )
+    parser.add_argument(
+        "--feature_dir",
+        type=str,
+        default="data/features/uni/TCGA/TCGA-LGG",
+        help="Path to directory containing SLIDE_ID.h5 feature files"
+    )
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=0,
+        help="Number of subprocesses for data loading"
+    )
+    parser.add_argument(
+        "--validation_rate",
+        type=int,
+        default=100,
+        help="Perform validation every N training batches"
+    )
+    parser.add_argument(
+        "--use_weighted_sampler",
+        action="store_true",
+        help="Use WeightedRandomSampler instead of class weights"
+    )
+    parser.add_argument(
+        "--experiment_name",
+        type=str,
+        default="TCGA-LGG",
+        help="Experiment name for logging"
+    )
+    parser.add_argument(
+        "--comet_api_key",
+        type=str,
+        default="",
+        help="Comet ML API key"
+    )
     args = parser.parse_args()
     return args
 
@@ -350,5 +464,26 @@ if __name__ == "__main__":
     # comet_ml.login()
     args = parse_args()
     config = load_config(args.config)
+
+    # Merge CLI arguments with config
+    config["num_epochs"] = args.num_epochs
+    config["learning_rate"] = args.learning_rate
+    config["hidden_dim"] = args.hidden_dim
+    config["dropout"] = args.dropout
+    config["batch_size"] = args.batch_size
+    config["validation_size"] = args.validation_size
+    config["random_seed"] = args.random_seed
+    config["device"] = args.device
+    config["disable_progress_bar"] = args.disable_progress_bar
+    config["model_name"] = args.model_name
+    config["num_of_classes"] = args.num_of_classes
+    config["feature_dim"] = args.feature_dim
+    config["metadata_path"] = args.metadata_path
+    config["feature_dir"] = args.feature_dir
+    config["num_workers"] = args.num_workers
+    config["validation_rate"] = args.validation_rate
+    config["use_weighted_sampler"] = args.use_weighted_sampler
+    config["experiment_name"] = args.experiment_name
+    config["comet_api_key"] = args.comet_api_key
 
     train(config)
