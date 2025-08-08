@@ -66,7 +66,7 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $((END_INDEX - 1))); do
         --patch_batch_size 32 \
         --num_workers 12 \
         --model_name "$MODEL_NAME" \
-        --hf_token $HF_TOKEN
+        --hf_token "$HF_TOKEN"
     echo "[MAIN] Feature extraction completed. Waiting 5 seconds..."
     sleep 5
     
