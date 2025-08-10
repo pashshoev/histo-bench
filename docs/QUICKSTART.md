@@ -62,7 +62,8 @@ PYTHONPATH=. python -u CLAM/create_patches_fp.py \
 python extract_vision_features_local.py --config example_data/TCGA-LGG/configs/vision_feature_extraction.yml
 ```
 
+# TODO update it later
 4. Train ABMIL model
 ```
-python train_mil.py --config example_data/TCGA-LGG/configs/train_mil.yml
-```
+python train_mil.py 
+`
