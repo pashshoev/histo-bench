@@ -455,7 +455,7 @@ def train(config: dict):
     }
 
     best_val_loss = float('inf')
-    checkpoint_path = "checkpoints/checkpoint.pt"
+    checkpoint_path = "checkpoints/best_model.pt"
     
     for epoch in range(config["num_epochs"]):
         model.train()
@@ -506,7 +506,7 @@ def train(config: dict):
     exp.log_metric("best_val_loss", best_val_loss)
     exp.log_model(
         name="best_model",
-        file_or_folder="checkpoint.pt",
+        file_or_folder=checkpoint_path,
         overwrite=True,
         metadata={
             "type": "torch_state_dict",

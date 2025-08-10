@@ -28,7 +28,7 @@ VALIDATION_RATE=100
 # Data configuration
 FEATURE_DIR="data/TCGA-Lung/features/ResNet50"
 METADATA_PATH="experiments/TCGA-Lung/training_labels.csv"
-NUM_WORKERS=0
+NUM_WORKERS=11
 
 # Logging configuration
 EXPERIMENT_NAME="TCGA-Lung-ResNet50-MeanPooling"
