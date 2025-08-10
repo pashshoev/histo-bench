@@ -2,7 +2,6 @@ import comet_ml
 from comet_ml import Experiment
 
 import argparse
-import yaml
 import torch
 import numpy as np
 import pandas as pd
@@ -36,21 +35,48 @@ def set_seed(config: dict):
     random.seed(seed)
 
 
-def load_config(config_path):
-    with open(config_path, "r") as file:
-        config = yaml.safe_load(file)
-    return config
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
+    
+    # Required parameters (must be specified)
     parser.add_argument(
-        "--config",
+        "--metadata_path",
         type=str,
-        default="configs/train_mil.yml",
-        help="Path to the configuration YAML file.",
+        required=True,
+        help="Path to CSV/Excel file with slide_id and label"
     )
-    # Hyperparameters as CLI arguments
+    parser.add_argument(
+        "--feature_dir",
+        type=str,
+        required=True,
+        help="Path to directory containing SLIDE_ID.h5 feature files"
+    )
+    parser.add_argument(
+        "--num_of_classes",
+        type=int,
+        required=True,
+        help="Number of output classes"
+    )
+    parser.add_argument(
+        "--feature_dim",
+        type=int,
+        required=True,
+        help="Dimension of the input instance embeddings"
+    )
+    parser.add_argument(
+        "--experiment_name",
+        type=str,
+        required=True,
+        help="Experiment name for logging"
+    )
+    parser.add_argument(
+        "--comet_api_key",
+        type=str,
+        required=True,
+        help="Comet ML API key"
+    )
+    
+    # Core training parameters (with sensible defaults)
     parser.add_argument(
         "--num_epochs",
         type=int,
@@ -64,16 +90,24 @@ def parse_args():
         help="Learning rate for training"
     )
     parser.add_argument(
-        "--weight_decay",
-        type=float,
-        default=0.01,
-        help="Weight decay for AdamW optimizer"
+        "--batch_size",
+        type=int,
+        default=1,
+        help="Batch size for DataLoader"
     )
     parser.add_argument(
-        "--scheduler_T_max",
-        type=int,
-        default=None,
-        help="T_max parameter for CosineAnnealingLR scheduler (defaults to num_epochs)"
+        "--validation_size",
+        type=float,
+        default=0.2,
+        help="Proportion of the dataset to use for validation"
+    )
+    
+    # Model architecture parameters
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default="MeanPooling",
+        help="Model name (ABMIL, TransMIL, MeanPooling, CLAM_MB, WiKG)"
     )
     parser.add_argument(
         "--hidden_dim",
@@ -87,66 +121,22 @@ def parse_args():
         default=0.3,
         help="Dropout rate for the final classifier"
     )
+    
+    # Optimizer and scheduler parameters
     parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=8,
-        help="Batch size for DataLoader"
-    )
-    parser.add_argument(
-        "--validation_size",
+        "--weight_decay",
         type=float,
-        default=0.5,
-        help="Proportion of the dataset to use for validation"
+        default=0.01,
+        help="Weight decay for AdamW optimizer"
     )
-    # Additional parameters from config
     parser.add_argument(
-        "--random_seed",
+        "--scheduler_T_max",
         type=int,
-        default=42,
-        help="Random seed for reproducibility"
+        default=None,
+        help="T_max parameter for CosineAnnealingLR scheduler (defaults to num_epochs)"
     )
-    parser.add_argument(
-        "--device",
-        type=str,
-        default="mps",
-        help="Device to use (cuda, cpu, mps)"
-    )
-    parser.add_argument(
-        "--disable_progress_bar",
-        action="store_true",
-        help="Disable progress bars during training/validation"
-    )
-    parser.add_argument(
-        "--model_name",
-        type=str,
-        default="ABMIL",
-        help="Model name (ABMIL, TransMIL, MeanPooling, CLAM_MB, WiKG)"
-    )
-    parser.add_argument(
-        "--num_of_classes",
-        type=int,
-        default=3,
-        help="Number of output classes"
-    )
-    parser.add_argument(
-        "--feature_dim",
-        type=int,
-        default=1536,
-        help="Dimension of the input instance embeddings"
-    )
-    parser.add_argument(
-        "--metadata_path",
-        type=str,
-        default="example_data/TCGA-LGG/training_metadata.csv",
-        help="Path to CSV/Excel file with slide_id and label"
-    )
-    parser.add_argument(
-        "--feature_dir",
-        type=str,
-        default="data/features/uni/TCGA/TCGA-LGG",
-        help="Path to directory containing SLIDE_ID.h5 feature files"
-    )
+    
+    # Training configuration
     parser.add_argument(
         "--num_workers",
         type=int,
@@ -164,20 +154,29 @@ def parse_args():
         action="store_true",
         help="Use WeightedRandomSampler instead of class weights"
     )
+    
+    # System and reproducibility
     parser.add_argument(
-        "--experiment_name",
+        "--device",
         type=str,
-        default="TCGA-LGG",
-        help="Experiment name for logging"
+        default="cpu",
+        help="Device to use (cuda, cpu, mps)"
     )
     parser.add_argument(
-        "--comet_api_key",
-        type=str,
-        default="",
-        help="Comet ML API key"
+        "--random_seed",
+        type=int,
+        default=42,
+        help="Random seed for reproducibility"
     )
-    args = parser.parse_args()
-    return args
+    
+    # Logging and monitoring
+    parser.add_argument(
+        "--disable_progress_bar",
+        action="store_true",
+        help="Disable progress bars during training/validation"
+    )
+    
+    return parser.parse_args()
 
 
 def get_model(config: dict) -> torch.nn.Module:
@@ -510,29 +509,30 @@ def train(config: dict):
 if __name__ == "__main__":
     # comet_ml.login()
     args = parse_args()
-    config = load_config(args.config)
-
-    # Merge CLI arguments with config
-    config["num_epochs"] = args.num_epochs
-    config["learning_rate"] = args.learning_rate
-    config["weight_decay"] = args.weight_decay
-    config["scheduler_T_max"] = args.scheduler_T_max
-    config["hidden_dim"] = args.hidden_dim
-    config["dropout"] = args.dropout
-    config["batch_size"] = args.batch_size
-    config["validation_size"] = args.validation_size
-    config["random_seed"] = args.random_seed
-    config["device"] = args.device
-    config["disable_progress_bar"] = args.disable_progress_bar
-    config["model_name"] = args.model_name
-    config["num_of_classes"] = args.num_of_classes
-    config["feature_dim"] = args.feature_dim
-    config["metadata_path"] = args.metadata_path
-    config["feature_dir"] = args.feature_dir
-    config["num_workers"] = args.num_workers
-    config["validation_rate"] = args.validation_rate
-    config["use_weighted_sampler"] = args.use_weighted_sampler
-    config["experiment_name"] = args.experiment_name
-    config["comet_api_key"] = args.comet_api_key
+    
+    # Create config dictionary directly from parsed arguments
+    config = {
+        "num_epochs": args.num_epochs,
+        "learning_rate": args.learning_rate,
+        "weight_decay": args.weight_decay,
+        "scheduler_T_max": args.scheduler_T_max,
+        "hidden_dim": args.hidden_dim,
+        "dropout": args.dropout,
+        "batch_size": args.batch_size,
+        "validation_size": args.validation_size,
+        "random_seed": args.random_seed,
+        "device": args.device,
+        "disable_progress_bar": args.disable_progress_bar,
+        "model_name": args.model_name,
+        "num_of_classes": args.num_of_classes,
+        "feature_dim": args.feature_dim,
+        "metadata_path": args.metadata_path,
+        "feature_dir": args.feature_dir,
+        "num_workers": args.num_workers,
+        "validation_rate": args.validation_rate,
+        "use_weighted_sampler": args.use_weighted_sampler,
+        "experiment_name": args.experiment_name,
+        "comet_api_key": args.comet_api_key,
+    }
 
     train(config)
