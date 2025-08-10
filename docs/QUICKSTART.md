@@ -65,5 +65,5 @@ python extract_vision_features_local.py --config example_data/TCGA-LGG/configs/v
 # TODO update it later
 4. Train ABMIL model
 ```
-python train_mil.py 
+./bash_commands/quick_train.sh
 `

@@ -10,3 +10,7 @@ configs/streamlit_generated_config.yml
 services/
 mlruns/
 mlartifacts/
+checkpoints/
+metrics/
+tmp/
+tmp.*

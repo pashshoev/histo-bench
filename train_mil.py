@@ -321,7 +321,7 @@ def plot_history(history: dict):
     plt.ylabel("Average Loss")
     plt.title("Training and Validation Losses")
     plt.legend()
-    plt.savefig("loss.png")
+    plt.savefig("metrics/loss.png")
     plt.close()
 
 
@@ -441,7 +441,7 @@ def train(config: dict):
     }
 
     best_val_loss = float('inf')
-    checkpoint_path = "checkpoint.pt"
+    checkpoint_path = "checkpoints/checkpoint.pt"
     
     for epoch in range(config["num_epochs"]):
         model.train()

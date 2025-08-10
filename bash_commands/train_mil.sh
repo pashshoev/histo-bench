@@ -24,6 +24,7 @@ DEVICE="mps"
 DISABLE_PROGRESS_BAR=false
 RANDOM_SEED=42
 VALIDATION_RATE=100
+WEIGHT_DECAY=0.01
 
 # Data configuration
 FEATURE_DIR="data/features/uni/TCGA/TCGA-LGG"
@@ -44,6 +45,7 @@ for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
         CMD="python train_mil.py \
             --num_epochs $NUM_EPOCHS \
             --learning_rate $LEARNING_RATE \
+            --weight_decay $WEIGHT_DECAY \
             --hidden_dim $HIDDEN_DIM \
             --dropout $DROPOUT \
             --batch_size $BATCH_SIZE \
