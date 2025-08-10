@@ -64,6 +64,18 @@ def parse_args():
         help="Learning rate for training"
     )
     parser.add_argument(
+        "--weight_decay",
+        type=float,
+        default=0.01,
+        help="Weight decay for AdamW optimizer"
+    )
+    parser.add_argument(
+        "--scheduler_T_max",
+        type=int,
+        default=None,
+        help="T_max parameter for CosineAnnealingLR scheduler (defaults to num_epochs)"
+    )
+    parser.add_argument(
         "--hidden_dim",
         type=int,
         default=256,
@@ -204,6 +216,31 @@ def get_model(config: dict) -> torch.nn.Module:
         raise ValueError(f"Model '{config['model_name']}' not supported.")
     model = model.to(config["device"])
     return model
+
+
+def setup_optimizer(model: torch.nn.Module, config: dict) -> torch.optim.Optimizer:
+    """Initialize and return the AdamW optimizer with configurable weight decay"""
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=config["learning_rate"],
+        weight_decay=config["weight_decay"]
+    )
+    logger.info(f"Initialized AdamW optimizer with lr={config['learning_rate']}, weight_decay={config['weight_decay']}")
+    return optimizer
+
+
+def setup_scheduler(optimizer: torch.optim.Optimizer, config: dict) -> torch.optim.lr_scheduler._LRScheduler:
+    """Initialize and return the CosineAnnealingLR scheduler"""
+    # Set T_max to num_epochs if not specified
+    T_max = config.get("scheduler_T_max")
+    if T_max is None:
+        T_max = config["num_epochs"]
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer,
+        T_max=T_max
+    )
+    logger.info(f"Initialized CosineAnnealingLR scheduler with T_max={T_max}")
+    return scheduler
 
 
 def get_data_loaders(config: dict) -> tuple[DataLoader, DataLoader]:
@@ -378,7 +415,9 @@ def train(config: dict):
     model = get_model(config)
     model.train()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config["learning_rate"])
+    # Initialize optimizer and scheduler
+    optimizer = setup_optimizer(model, config)
+    scheduler = setup_scheduler(optimizer, config)
     
     # Handle class weights if provided in config (only if not using weighted sampler)
     if "class_weights" in config and not config.get("use_weighted_sampler", False):
@@ -404,9 +443,12 @@ def train(config: dict):
 
     best_val_loss = float('inf')
     checkpoint_path = "checkpoint.pt"
+    
     for epoch in range(config["num_epochs"]):
         model.train()
-        logger.info(f"Starting Epoch {epoch+1}/{config['num_epochs']}")
+        current_lr = optimizer.param_groups[0]['lr']
+        logger.info(f"Starting Epoch {epoch+1}/{config['num_epochs']} with lr={current_lr:.6f}")
+        
         epoch_loss = 0
         for patch_features, slide_labels, attention_masks in tqdm(train_dataloader, 
                                                 desc = f"Training Epoch {epoch+1}", 
@@ -425,6 +467,9 @@ def train(config: dict):
             loss.backward()
             optimizer.step()
         
+        # Step the scheduler to update learning rate
+        scheduler.step()
+        
         # Logs
         history["epoch"].append(epoch+1)
         avg_train_loss = epoch_loss / len(train_dataloader)
@@ -432,9 +477,11 @@ def train(config: dict):
         logger.info(f"Validation report: \n{val_result['report']}")
         logger.info(f"Losses: train = {avg_train_loss:.10f}, val = {val_result['loss']:.4f}")
         
+        # Log metrics including current learning rate
         exp.log_metrics({"train_loss": avg_train_loss, "val_loss": val_result["loss"]}, epoch=epoch)
         exp.log_metrics({"auc_macro": val_result["auc_macro"], "auc_micro": val_result["auc_micro"]}, epoch=epoch)
         exp.log_metrics(val_result["report"], epoch=epoch)
+        exp.log_metrics({"learning_rate": current_lr}, epoch=epoch)
         
         history["losses"]["train"].append(avg_train_loss)
         history["losses"]["val"].append(val_result["loss"])
@@ -468,6 +515,8 @@ if __name__ == "__main__":
     # Merge CLI arguments with config
     config["num_epochs"] = args.num_epochs
     config["learning_rate"] = args.learning_rate
+    config["weight_decay"] = args.weight_decay
+    config["scheduler_T_max"] = args.scheduler_T_max
     config["hidden_dim"] = args.hidden_dim
     config["dropout"] = args.dropout
     config["batch_size"] = args.batch_size
