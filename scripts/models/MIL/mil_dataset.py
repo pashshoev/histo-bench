@@ -14,7 +14,7 @@ def filter_data(metadata_df: pd.DataFrame, feature_dir: str) -> pd.DataFrame:
         label = row['label']
         h5_path = os.path.join(feature_dir, f"{slide_id}.h5")
         if os.path.exists(h5_path):
-            data_info.append({'slide_id': slide_id, 'feature_path': h5_path, 'label': label})
+            data_info.append({'slide_id': slide_id, 'feature_path': h5_path, 'label': label, 'case_id': row['case_id']})
         else:
             pass
             logger.warning(f"Feature file not found for slide_id: {slide_id} at {h5_path}. Skipping.")
