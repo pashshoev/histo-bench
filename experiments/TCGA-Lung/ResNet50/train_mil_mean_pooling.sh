@@ -41,36 +41,36 @@ for NUM_EPOCHS in $NUM_EPOCHS_VALUES; do
     for LEARNING_RATE in $LEARNING_RATE_VALUES; do
         for WEIGHT_DECAY in $WEIGHT_DECAY_VALUES; do
             echo "Running training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY"
-        
-        # Build command with all parameters
-        CMD="python train_mil.py \
-            --num_epochs $NUM_EPOCHS \
-            --learning_rate $LEARNING_RATE \
-            --weight_decay $WEIGHT_DECAY \
-            --validation_size $VALIDATION_SIZE \
-            --random_seed $RANDOM_SEED \
-            --device $DEVICE \
-            --model_name $MODEL_NAME \
-            --num_of_classes $NUM_OF_CLASSES \
-            --feature_dim $FEATURE_DIM \
-            --metadata_path $METADATA_PATH \
-            --feature_dir $FEATURE_DIR \
-            --num_workers $NUM_WORKERS \
-            --validation_rate $VALIDATION_RATE \
-            --experiment_name $EXPERIMENT_NAME"
-        
-        # Add boolean flags if needed
-        if [ "$DISABLE_PROGRESS_BAR" = true ]; then
-            CMD="$CMD --disable_progress_bar"
-        fi
-        
-        if [ "$USE_WEIGHTED_SAMPLER" = true ]; then
-            CMD="$CMD --use_weighted_sampler"
-        fi
-        
-        # Run the command
-        eval $CMD
-        
+            
+            # Build command with all parameters
+            CMD="python train_mil.py \
+                --num_epochs $NUM_EPOCHS \
+                --learning_rate $LEARNING_RATE \
+                --weight_decay $WEIGHT_DECAY \
+                --validation_size $VALIDATION_SIZE \
+                --random_seed $RANDOM_SEED \
+                --device $DEVICE \
+                --model_name $MODEL_NAME \
+                --num_of_classes $NUM_OF_CLASSES \
+                --feature_dim $FEATURE_DIM \
+                --metadata_path $METADATA_PATH \
+                --feature_dir $FEATURE_DIR \
+                --num_workers $NUM_WORKERS \
+                --validation_rate $VALIDATION_RATE \
+                --experiment_name $EXPERIMENT_NAME"
+            
+            # Add boolean flags if needed
+            if [ "$DISABLE_PROGRESS_BAR" = true ]; then
+                CMD="$CMD --disable_progress_bar"
+            fi
+            
+            if [ "$USE_WEIGHTED_SAMPLER" = true ]; then
+                CMD="$CMD --use_weighted_sampler"
+            fi
+            
+            # Run the command
+            eval $CMD
+            
             echo "Completed training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY"
             echo "----------------------------------------"
         done
