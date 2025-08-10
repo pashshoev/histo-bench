@@ -7,7 +7,7 @@
 # cd "$(dirname "$0")/.."
 
 # Hyperparameters
-NUM_EPOCHS_VALUES=(50)
+NUM_EPOCHS_VALUES=(25)
 LEARNING_RATE_VALUES=(0.0001 0.0005 0.001)
 WEIGHT_DECAY_VALUES=(0 0.0001 0.001)
 # HIDDEN_DIM=256 # Not used for MeanPooling

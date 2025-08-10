@@ -417,6 +417,9 @@ def validate(model: torch.nn.Module,
 
 def train(config: dict):
     set_seed(config)
+    os.makedirs("checkpoints", exist_ok=True)
+    os.makedirs("metrics", exist_ok=True)
+    
     exp = Experiment(project_name=config["experiment_name"],
                      api_key=config["comet_api_key"],
                      workspace="bakhtierzhon-pashshoev")
