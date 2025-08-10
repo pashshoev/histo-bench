@@ -4,34 +4,34 @@
 # Edit the values below to change hyperparameters
 
 # Change to project root directory
-cd "$(dirname "$0")/.."
+# cd "$(dirname "$0")/.."
 
 # Hyperparameters
 NUM_EPOCHS_VALUES=(50)
-LEARNING_RATE_VALUES=(0.0001, 0.0005, 0.001)
-WEIGHT_DECAY_VALUES=(0, 0.0001, 0.001)
+LEARNING_RATE_VALUES=(0.0001 0.0005 0.001)
+WEIGHT_DECAY_VALUES=(0 0.0001 0.001)
 # HIDDEN_DIM=256 # Not used for MeanPooling
 # DROPOUT=0.3 # Not used for MeanPooling
 BATCH_SIZE=1
 VALIDATION_SIZE=0.2
 
 # Model configuration
-FEATURE_DIM=1536
+FEATURE_DIM=2048
 MODEL_NAME="MeanPooling"
-NUM_OF_CLASSES=3
+NUM_OF_CLASSES=2
 
 # Training configuration
-DEVICE="mps"
+DEVICE="cuda"
 RANDOM_SEED=42
 VALIDATION_RATE=100
 
 # Data configuration
 FEATURE_DIR="data/TCGA-Lung/features/ResNet50"
-METADATA_PATH="data/TCGA-Lung/train_metadata.csv"
+METADATA_PATH="experiments/TCGA-Lung/training_labels.csv"
 NUM_WORKERS=0
 
 # Logging configuration
-EXPERIMENT_NAME="TCGA-Lung-ResNet50"
+EXPERIMENT_NAME="TCGA-Lung-ResNet50-MeanPooling"
 USE_WEIGHTED_SAMPLER=false
 DISABLE_PROGRESS_BAR=false
 
@@ -57,7 +57,7 @@ for NUM_EPOCHS in $NUM_EPOCHS_VALUES; do
             --feature_dir $FEATURE_DIR \
             --num_workers $NUM_WORKERS \
             --validation_rate $VALIDATION_RATE \
-            --experiment_name $EXPERIMENT_NAME \
+            --experiment_name $EXPERIMENT_NAME"
         
         # Add boolean flags if needed
         if [ "$DISABLE_PROGRESS_BAR" = true ]; then
