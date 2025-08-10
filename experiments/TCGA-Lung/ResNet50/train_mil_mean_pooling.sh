@@ -7,8 +7,9 @@
 cd "$(dirname "$0")/.."
 
 # Hyperparameters
-NUM_EPOCHS_VALUES=(1 2 3)
-LEARNING_RATE_VALUES=(0.0001 0.0005 0.001) 
+NUM_EPOCHS_VALUES=(50)
+LEARNING_RATE_VALUES=(0.0001, 0.0005, 0.001)
+WEIGHT_DECAY_VALUES=(0, 0.0001, 0.001)
 # HIDDEN_DIM=256 # Not used for MeanPooling
 # DROPOUT=0.3 # Not used for MeanPooling
 BATCH_SIZE=1
@@ -23,24 +24,23 @@ NUM_OF_CLASSES=3
 DEVICE="mps"
 RANDOM_SEED=42
 VALIDATION_RATE=100
-WEIGHT_DECAY=0.01
 
 # Data configuration
-FEATURE_DIR="data/features/uni/TCGA/TCGA-LGG"
-METADATA_PATH="example_data/TCGA-LGG/training_metadata.csv"
+FEATURE_DIR="data/TCGA-Lung/features/ResNet50"
+METADATA_PATH="data/TCGA-Lung/train_metadata.csv"
 NUM_WORKERS=0
 
 # Logging configuration
-COMET_API_KEY="9Uk3HLvmNE6oVdcML7nmU4HSX"
-EXPERIMENT_NAME="TCGA-LGG"
+EXPERIMENT_NAME="TCGA-Lung-ResNet50"
 USE_WEIGHTED_SAMPLER=false
 DISABLE_PROGRESS_BAR=false
 
 
 # Grid search loops
-for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
-    for LEARNING_RATE in "${LEARNING_RATE_VALUES[@]}"; do
-        echo "Running training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE"
+for NUM_EPOCHS in $NUM_EPOCHS_VALUES; do
+    for LEARNING_RATE in $LEARNING_RATE_VALUES; do
+        for WEIGHT_DECAY in $WEIGHT_DECAY_VALUES; do
+            echo "Running training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY"
         
         # Build command with all parameters
         CMD="python train_mil.py \
@@ -58,7 +58,6 @@ for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
             --num_workers $NUM_WORKERS \
             --validation_rate $VALIDATION_RATE \
             --experiment_name $EXPERIMENT_NAME \
-            --comet_api_key $COMET_API_KEY"
         
         # Add boolean flags if needed
         if [ "$DISABLE_PROGRESS_BAR" = true ]; then
@@ -72,8 +71,9 @@ for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
         # Run the command
         eval $CMD
         
-        echo "Completed training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE"
-        echo "----------------------------------------"
+            echo "Completed training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY"
+            echo "----------------------------------------"
+        done
     done
 done
 

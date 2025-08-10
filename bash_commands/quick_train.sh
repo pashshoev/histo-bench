@@ -7,7 +7,6 @@
 METADATA_PATH="example_data/TCGA-LGG/training_metadata.csv"
 FEATURE_DIR="data/features/uni/TCGA/TCGA-LGG"
 EXPERIMENT_NAME="quick_test"
-COMET_API_KEY="9Uk3HLvmNE6oVdcML7nmU4HSX"
 
 # Quick test command
 echo "🚀 Running quick test..."
@@ -17,7 +16,6 @@ python train_mil.py \
     --num_of_classes 3 \
     --feature_dim 1536 \
     --experiment_name "$EXPERIMENT_NAME" \
-    --comet_api_key "$COMET_API_KEY" \
     --num_epochs 2 \
     --batch_size 1 \
     --learning_rate 0.0005 \

@@ -23,7 +23,7 @@ def mil_app_ui():
         "Select a model for benchmarking:",
         model_options,
         index=0,
-        help="A file containing slide_id and label columns"
+        help="A file containing slide_id, label, and case_id columns"
     )
     metadata_file = st.file_uploader(" Upload Metadata File", type=["csv", "xlsx"])
     feature_dir_path = st.text_input(

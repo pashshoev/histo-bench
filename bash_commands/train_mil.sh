@@ -32,7 +32,6 @@ METADATA_PATH="example_data/TCGA-LGG/training_metadata.csv"
 NUM_WORKERS=0
 
 # Logging configuration
-COMET_API_KEY=""
 EXPERIMENT_NAME="TCGA-LGG"
 USE_WEIGHTED_SAMPLER=false
 
@@ -60,7 +59,6 @@ for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
             --num_workers $NUM_WORKERS \
             --validation_rate $VALIDATION_RATE \
             --experiment_name $EXPERIMENT_NAME \
-            --comet_api_key $COMET_API_KEY"
         
         # Add boolean flags if needed
         if [ "$DISABLE_PROGRESS_BAR" = true ]; then

@@ -1,6 +1,7 @@
 import comet_ml
 from comet_ml import Experiment
-
+import os
+from dotenv import load_dotenv
 import argparse
 import torch
 import numpy as np
@@ -9,7 +10,7 @@ import random
 from tqdm import tqdm
 from loguru import logger
 from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit
 from sklearn.metrics import classification_report, roc_auc_score
 from torch.nn.functional import softmax
 import matplotlib.pyplot as plt
@@ -21,6 +22,9 @@ from scripts.models.MIL.mil_dataset import MILDataset, mil_collate_fn, filter_da
 from scripts.models.MIL.mean_pooling import MeanPooling
 from scripts.models.MIL.clam import CLAM_MB
 from scripts.models.MIL.wikg import WiKG
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure loguru for clean output
 logger.remove()
@@ -43,7 +47,7 @@ def parse_args():
         "--metadata_path",
         type=str,
         required=True,
-        help="Path to CSV/Excel file with slide_id and label"
+        help="Path to CSV/Excel file with slide_id, label, and case_id columns"
     )
     parser.add_argument(
         "--feature_dir",
@@ -68,12 +72,6 @@ def parse_args():
         type=str,
         required=True,
         help="Experiment name for logging"
-    )
-    parser.add_argument(
-        "--comet_api_key",
-        type=str,
-        required=True,
-        help="Comet ML API key"
     )
     
     # Core training parameters (with sensible defaults)
@@ -249,12 +247,25 @@ def get_data_loaders(config: dict) -> tuple[DataLoader, DataLoader]:
     full_dataset = pd.read_csv(config["metadata_path"])
     full_dataset = filter_data(full_dataset, config["feature_dir"])
     logger.info(f"Full dataset size after filtering: {len(full_dataset)} bags")
-    train_df, val_df = train_test_split(
-        full_dataset,
-        test_size=config["validation_size"],
-        random_state=config["random_seed"],
-        stratify=full_dataset['label'] if 'label' in full_dataset.columns else None
-    )
+    
+    # Log patient-wise distribution
+    counts = full_dataset.groupby('case_id').size().value_counts().sort_index()
+    logger.info(f"Slides per patient distribution:\n{counts}")
+    
+    # Create patient-wise train/validation split
+    gss = GroupShuffleSplit(n_splits=1, test_size=config["validation_size"], random_state=config["random_seed"])
+    train_idx, val_idx = next(gss.split(full_dataset, groups=full_dataset['case_id']))
+    
+    train_df = full_dataset.iloc[train_idx].copy()
+    val_df = full_dataset.iloc[val_idx].copy()
+    
+    # Ensure patient sets are disjoint
+    train_patients = set(train_df['case_id'])
+    val_patients = set(val_df['case_id'])
+    assert train_patients.isdisjoint(val_patients), "Train and validation patient sets must be disjoint"
+    
+    logger.info(f"Patient-wise splits: train={len(train_patients)} patients, validation={len(val_patients)} patients")
+    logger.info(f"Slide-wise splits: train={len(train_df)} slides, validation={len(val_df)} slides")
     
     train_dataset = MILDataset(
         feature_dir=config["feature_dir"],
@@ -509,6 +520,7 @@ def train(config: dict):
 if __name__ == "__main__":
     # comet_ml.login()
     args = parse_args()
+    comet_api_key = os.getenv("COMET_API_KEY")
     
     # Create config dictionary directly from parsed arguments
     config = {
@@ -532,7 +544,7 @@ if __name__ == "__main__":
         "validation_rate": args.validation_rate,
         "use_weighted_sampler": args.use_weighted_sampler,
         "experiment_name": args.experiment_name,
-        "comet_api_key": args.comet_api_key,
+        "comet_api_key": comet_api_key,
     }
 
     train(config)

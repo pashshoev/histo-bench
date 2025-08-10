@@ -14,3 +14,4 @@ checkpoints/
 metrics/
 tmp/
 tmp.*
+.env
