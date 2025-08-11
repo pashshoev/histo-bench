@@ -37,9 +37,9 @@ DISABLE_PROGRESS_BAR=false
 
 
 # Grid search loops
-for NUM_EPOCHS in $NUM_EPOCHS_VALUES; do
-    for LEARNING_RATE in $LEARNING_RATE_VALUES; do
-        for WEIGHT_DECAY in $WEIGHT_DECAY_VALUES; do
+for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
+    for LEARNING_RATE in "${LEARNING_RATE_VALUES[@]}"; do
+        for WEIGHT_DECAY in "${WEIGHT_DECAY_VALUES[@]}"; do
             echo "Running training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY"
             
             # Build command with all parameters
