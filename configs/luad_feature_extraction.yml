@@ -1,0 +1,21 @@
+
+# paths
+wsi_dir: "data/TCGA-LUAD/slides"
+coordinates_dir: "data/TCGA-LUAD/coordinates/patches"
+wsi_meta_data_path: "data/TCGA-LUAD/coordinates/process_list_autogen.csv"
+features_dir: "data/TCGA-LUAD/features/resnet"
+
+
+device: "cuda"
+patch_batch_size: 32
+num_workers: 12
+
+#model configs
+model_name: "ResNet50"
+hf_token: ""
+
+#log level
+log_level: "DEBUG"
+
+#disable progress bar
+disable_progress_bar: False
