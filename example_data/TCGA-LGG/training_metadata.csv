@@ -1,4 +1,4 @@
-slide_id,histologic_diagnosis,tumor_grade,barcode,label
+slide_id,histologic_diagnosis,tumor_grade,case_id,label
 TCGA-DU-A7T6-01Z-00-DX1.9FCFC32F-0D18-4CE5-8CF3-34A7732FD76D,Oligodendroglioma,G3,TCGA-DU-A7T6,0
 TCGA-DU-7018-01Z-00-DX1.75C2DA95-5661-4CC4-BF42-CF30137CEA9F,Oligodendroglioma,G3,TCGA-DU-7018,0
 TCGA-WY-A85A-01Z-00-DX1.CB302B89-F89A-40FD-A7DE-6E12BEFBA2AE,Astrocytoma,G2,TCGA-WY-A85A,1

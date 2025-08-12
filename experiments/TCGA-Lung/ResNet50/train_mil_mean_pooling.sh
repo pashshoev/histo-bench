@@ -35,6 +35,9 @@ EXPERIMENT_NAME="TCGA-Lung-ResNet50-MeanPooling"
 USE_WEIGHTED_SAMPLER=false
 DISABLE_PROGRESS_BAR=false
 
+# Cross-validation configuration
+N_FOLDS=1
+
 
 # Grid search loops
 for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
@@ -57,7 +60,8 @@ for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
                 --feature_dir $FEATURE_DIR \
                 --num_workers $NUM_WORKERS \
                 --validation_rate $VALIDATION_RATE \
-                --experiment_name $EXPERIMENT_NAME"
+                --experiment_name $EXPERIMENT_NAME \
+                --n_folds $N_FOLDS"
             
             # Add boolean flags if needed
             if [ "$DISABLE_PROGRESS_BAR" = true ]; then

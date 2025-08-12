@@ -19,4 +19,5 @@ python train_mil.py \
     --num_epochs 2 \
     --batch_size 1 \
     --learning_rate 0.0005 \
-    --model_name "MeanPooling"
+    --model_name "MeanPooling" \
+    --n_folds 3

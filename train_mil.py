@@ -174,6 +174,14 @@ def parse_args():
         help="Disable progress bars during training/validation"
     )
     
+    # Cross-validation parameters
+    parser.add_argument(
+        "--n_folds",
+        type=int,
+        default=1,
+        help="Number of folds for cross-validation (default: 1)"
+    )
+    
     return parser.parse_args()
 
 
@@ -240,9 +248,10 @@ def setup_scheduler(optimizer: torch.optim.Optimizer, config: dict) -> torch.opt
     return scheduler
 
 
-def get_data_loaders(config: dict) -> tuple[DataLoader, DataLoader]:
-    """Create and return train and validation DataLoaders"""
+def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoader]:
+    """Create and return train and validation DataLoaders for a specific fold"""
     from torch.utils.data import WeightedRandomSampler
+    from sklearn.model_selection import GroupKFold
     
     full_dataset = pd.read_csv(config["metadata_path"])
     full_dataset = filter_data(full_dataset, config["feature_dir"])
@@ -252,9 +261,18 @@ def get_data_loaders(config: dict) -> tuple[DataLoader, DataLoader]:
     counts = full_dataset.groupby('case_id').size().value_counts().sort_index()
     logger.info(f"Slides per patient distribution:\n{counts}")
     
-    # Create patient-wise train/validation split
-    gss = GroupShuffleSplit(n_splits=1, test_size=config["validation_size"], random_state=config["random_seed"])
-    train_idx, val_idx = next(gss.split(full_dataset, groups=full_dataset['case_id']))
+    if config["n_folds"] > 1:
+        # Use GroupKFold for cross-validation
+        gkf = GroupKFold(n_splits=config["n_folds"], random_state=config["random_seed"], shuffle=True)
+        splits = list(gkf.split(full_dataset, groups=full_dataset['case_id']))
+        train_idx, val_idx = splits[fold]
+        logger.info(f"Cross-validation fold {fold + 1}/{config['n_folds']}")
+    else:
+        # Use GroupShuffleSplit for single train/val split (n_folds=1)
+        from sklearn.model_selection import GroupShuffleSplit
+        gss = GroupShuffleSplit(n_splits=1, test_size=config["validation_size"], random_state=config["random_seed"])
+        train_idx, val_idx = next(gss.split(full_dataset, groups=full_dataset['case_id']))
+        logger.info("Single train/validation split")
     
     train_df = full_dataset.iloc[train_idx].copy()
     val_df = full_dataset.iloc[val_idx].copy()
@@ -264,8 +282,8 @@ def get_data_loaders(config: dict) -> tuple[DataLoader, DataLoader]:
     val_patients = set(val_df['case_id'])
     assert train_patients.isdisjoint(val_patients), "Train and validation patient sets must be disjoint"
     
-    logger.info(f"Patient-wise splits: train={len(train_patients)} patients, validation={len(val_patients)} patients")
-    logger.info(f"Slide-wise splits: train={len(train_df)} slides, validation={len(val_df)} slides")
+    logger.info(f"Fold {fold + 1}: train={len(train_patients)} patients, validation={len(val_patients)} patients")
+    logger.info(f"Fold {fold + 1}: train={len(train_df)} slides, validation={len(val_df)} slides")
     
     train_dataset = MILDataset(
         feature_dir=config["feature_dir"],
@@ -324,48 +342,6 @@ def get_data_loaders(config: dict) -> tuple[DataLoader, DataLoader]:
     return train_loader, val_loader
 
 
-def plot_history(history: dict):
-    plt.figure(figsize=(10, 5))
-    plt.plot(history["epoch"], history["losses"]["train"], label="Training", color="blue")
-    plt.plot(history["epoch"], history["losses"]["val"], label="Validation", color="red")
-    plt.xlabel("Epoch")
-    plt.ylabel("Average Loss")
-    plt.title("Training and Validation Losses")
-    plt.legend()
-    plt.savefig("metrics/loss.png")
-    plt.close()
-
-
-def flatten_report(report: dict, prefix="r") -> dict:
-    flat = {}
-    for key, value in report.items():
-        if isinstance(value, dict):
-            for sub_key, sub_val in value.items():
-                flat[f"{prefix}/{key}/{sub_key}"] = float(sub_val)
-        else:
-            flat[f"{prefix}/{key}"] = float(value)
-    return flat
-
-
-def log_mlflow(config: dict, model: torch.nn.Module, metrics: dict, checkpoint_path: str):
-    host = "127.0.0.1"
-    port = 5000
-
-    mlflow.set_tracking_uri(uri=f"http://{host}:{port}")
-    mlflow.set_experiment(config["experiment_name"])
-    mlflow.log_params(config)
-    # report_flat = flatten_report(metrics["report"])
-
-    mlflow.log_metrics(metrics)
-
-    mlflow.log_artifact(checkpoint_path, artifact_path="model_state_dict")
-
-    mlflow.pytorch.log_model(
-        model,
-        name="model",
-    )
-
-
 def validate(model: torch.nn.Module, 
              data_loader: DataLoader, 
              criterion: torch.nn.Module, 
@@ -415,16 +391,103 @@ def validate(model: torch.nn.Module,
     }
     return result
 
-def train(config: dict):
+
+def cross_validate(config: dict):
+    """Perform cross-validation by training the model on multiple folds"""
+    logger.info(f"Starting {config['n_folds']}-fold cross-validation")
+    
+    fold_results = []
+    
+    for fold in range(config["n_folds"]):
+        logger.info(f"\n{'='*50}")
+        logger.info(f"Training Fold {fold + 1}/{config['n_folds']}")
+        logger.info(f"{'='*50}")
+        
+        # Create fold-specific config
+        fold_config = config.copy()
+        fold_config['current_fold'] = fold
+        
+        # Train on this fold
+        fold_result = train_single_fold(fold_config)
+        fold_results.append(fold_result)
+        
+        logger.info(f"Fold {fold + 1} completed. Best val loss: {fold_result['best_val_loss']:.6f}")
+    
+    # Aggregate results across folds
+    aggregate_cv_results(fold_results, config)
+    
+    return fold_results
+
+
+def aggregate_cv_results(fold_results: list, config: dict):
+    """Aggregate and log cross-validation results to Comet ML"""
+    logger.info(f"\n{'='*50}")
+    logger.info("CROSS-VALIDATION RESULTS SUMMARY")
+    logger.info(f"{'='*50}")
+    
+    # Extract key metrics
+    val_losses = [r['best_val_loss'] for r in fold_results]
+    val_aucs_macro = [r['final_val_auc_macro'] for r in fold_results]
+    accuracies = [r['final_val_accuracy'] for r in fold_results]
+    weighted_f1_scores = [r['final_val_weighted_f1'] for r in fold_results]
+    
+    # Calculate statistics
+    mean_val_loss = np.mean(val_losses)
+    std_val_loss = np.std(val_losses)
+    mean_auc_macro = np.mean(val_aucs_macro)
+    std_auc_macro = np.std(val_aucs_macro)
+    mean_accuracy = np.mean(accuracies)
+    std_accuracy = np.std(accuracies)
+    mean_weighted_f1 = np.mean(weighted_f1_scores)
+    std_weighted_f1 = np.std(weighted_f1_scores)
+    
+    logger.info(f"Mean Validation Loss: {mean_val_loss:.6f} ± {std_val_loss:.6f}")
+    logger.info(f"Mean AUC (Macro): {mean_auc_macro:.6f} ± {std_auc_macro:.6f}")
+    logger.info(f"Mean Accuracy: {mean_accuracy:.6f} ± {std_accuracy:.6f}")
+    logger.info(f"Mean Weighted F1: {mean_weighted_f1:.6f} ± {std_weighted_f1:.6f}")
+    
+    # Create summary run in the same experiment
+    summary_exp = Experiment(
+        project_name=config["experiment_name"],
+        api_key=config["comet_api_key"],
+        workspace="bakhtierzhon-pashshoev"
+    )
+    # Log aggregated metrics
+    summary_exp.log_metrics({
+        "mean_val_loss": mean_val_loss,
+        "std_val_loss": std_val_loss,
+        "mean_auc_macro": mean_auc_macro,
+        "std_auc_macro": std_auc_macro,
+        "mean_accuracy": mean_accuracy,
+        "std_accuracy": std_accuracy,
+        "mean_weighted_f1": mean_weighted_f1,
+        "std_weighted_f1": std_weighted_f1,
+        "n_folds": config['n_folds']
+    })
+    
+    # Log parameters
+    summary_exp.log_parameters(config)
+    
+    summary_exp.end()
+    logger.info("Cross-validation summary logged to Comet ML")
+
+
+def train_single_fold(config: dict):
+    """Train the model on a single fold (renamed from original train function)"""
     set_seed(config)
     os.makedirs("checkpoints", exist_ok=True)
     os.makedirs("metrics", exist_ok=True)
     
-    exp = Experiment(project_name=config["experiment_name"],
-                     api_key=config["comet_api_key"],
-                     workspace="bakhtierzhon-pashshoev")
+    exp = Experiment(
+        project_name=config["experiment_name"],
+        api_key=config["comet_api_key"],
+        workspace="bakhtierzhon-pashshoev"
+    )
     exp.log_parameters(config)
-
+    
+    # Log fold information if this is part of cross-validation
+    if config.get('current_fold') is not None:
+        exp.log_parameter("current_fold", config['current_fold'])
     model = get_model(config)
     model.train()
 
@@ -444,7 +507,7 @@ def train(config: dict):
         else:
             logger.info("No class weights specified, using default CrossEntropyLoss")
     
-    train_dataloader, val_dataloader = get_data_loaders(config)
+    train_dataloader, val_dataloader = get_data_loaders(config, fold=config.get('current_fold', 0))
 
     history = {
         "epoch": [],
@@ -514,10 +577,18 @@ def train(config: dict):
         }
     )    
     exp.end()
-    train_result = validate(model, train_dataloader, criterion, config)
-    logger.info(f"Metrics on training set: \n{train_result['report']}")
+    
     logger.info("Training finished successfully!")
-    plot_history(history)
+    
+    # Return results for cross-validation aggregation
+    # Use the last validation result from training (batch_size=1, so this is already final)
+    return {
+        'best_val_loss': best_val_loss,
+        'final_val_auc_macro': val_result['auc_macro'],
+        'final_val_accuracy': val_result['report']['accuracy'],
+        'final_val_weighted_f1': val_result['report']['weighted avg']['f1-score'],
+        'final_val_report': val_result['report']
+    }
 
 
 if __name__ == "__main__":
@@ -548,6 +619,10 @@ if __name__ == "__main__":
         "use_weighted_sampler": args.use_weighted_sampler,
         "experiment_name": args.experiment_name,
         "comet_api_key": comet_api_key,
+        "n_folds": args.n_folds,
     }
 
-    train(config)
+    if config["n_folds"] > 1:
+        cross_validate(config)
+    else:
+        train_single_fold(config)
