@@ -90,3 +90,13 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $((END_INDEX - 1))); do
 done
 
 echo "All batches completed successfully!"
+
+PYTHONPATH=. python -u CLAM/create_patches_fp.py \
+    --source  \
+    --save_dir  \
+    --preset "CLAM/presets/tcga.csv" \
+    --patch_size 2048 \
+    --step_size 2048 \
+    --patch_level 0 \
+    --seg --patch --stitch \
+    --log_level INFO

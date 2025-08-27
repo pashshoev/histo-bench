@@ -111,8 +111,8 @@ def save_missing_manifest(manifest_path, missing_filenames, output_path):
 
 def main():
     parser = argparse.ArgumentParser(description='Find files missing from GCS bucket')
-    parser.add_argument('gcs_bucket_path', help='GCS bucket path (e.g., gs://histo-bench/TCGA-LUSC/features/ResNet50)')
-    parser.add_argument('manifest_path', help='Path to the manifest file')
+    parser.add_argument('--gcs_bucket_path', help='GCS bucket path (e.g., gs://histo-bench/TCGA-LUSC/features/ResNet50)')
+    parser.add_argument('--manifest_path', help='Path to the manifest file')
     parser.add_argument('--output', '-o', default='missing_files_manifest.txt', 
                        help='Output path for missing files manifest (default: missing_files_manifest.txt)')
     
