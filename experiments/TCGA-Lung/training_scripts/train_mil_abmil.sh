@@ -39,7 +39,7 @@ DISABLE_PROGRESS_BAR=false
 N_FOLDS=1
 
 # Early stopping configuration
-EARLY_STOPPING_PATIENCE=10  # Number of epochs to wait before early stopping (None to disable)
+EARLY_STOPPING_PATIENCE=5  # Number of epochs to wait before early stopping (None to disable)
 EARLY_STOPPING_MIN_DELTA=0.001  # Minimum change in validation loss to qualify as improvement
 EARLY_STOPPING_RESTORE_BEST_WEIGHTS=true  # Restore model weights from best epoch
 
@@ -48,50 +48,54 @@ EARLY_STOPPING_RESTORE_BEST_WEIGHTS=true  # Restore model weights from best epoc
 for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
     for LEARNING_RATE in "${LEARNING_RATE_VALUES[@]}"; do
         for WEIGHT_DECAY in "${WEIGHT_DECAY_VALUES[@]}"; do
-            echo "Running training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY"
-            
-            # Build command with all parameters
-            CMD="python train_mil.py \
-                --num_epochs $NUM_EPOCHS \
-                --learning_rate $LEARNING_RATE \
-                --weight_decay $WEIGHT_DECAY \
-                --validation_size $VALIDATION_SIZE \
-                --random_seed $RANDOM_SEED \
-                --device $DEVICE \
-                --model_name $MODEL_NAME \
-                --num_of_classes $NUM_OF_CLASSES \
-                --feature_dim $FEATURE_DIM \
-                --hidden_dim $HIDDEN_DIM \
-                --dropout $DROPOUT \
-                --metadata_path $METADATA_PATH \
-                --feature_dir $FEATURE_DIR \
-                --num_workers $NUM_WORKERS \
-                --validation_rate $VALIDATION_RATE \
-                --experiment_name $EXPERIMENT_NAME \
-                --n_folds $N_FOLDS \
-                --early_stopping_patience $EARLY_STOPPING_PATIENCE \
-                --early_stopping_min_delta $EARLY_STOPPING_MIN_DELTA"
-            
-            # Add boolean flags if needed
-            if [ "$DISABLE_PROGRESS_BAR" = true ]; then
-                CMD="$CMD --disable_progress_bar"
-            fi
-            
-            if [ "$USE_WEIGHTED_SAMPLER" = true ]; then
-                CMD="$CMD --use_weighted_sampler"
-            fi
-            
-            if [ "$EARLY_STOPPING_RESTORE_BEST_WEIGHTS" = true ]; then
-                CMD="$CMD --early_stopping_restore_best_weights"
-            fi
-            
-            # Run the command
-            eval $CMD
-            
-            echo "Completed training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY"
-            echo "----------------------------------------"
+            for HIDDEN_DIM_VAL in "${HIDDEN_DIM[@]}"; do
+                for DROPOUT_VAL in "${DROPOUT[@]}"; do
+                    echo "Running training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL"
+                    
+                    # Build command with all parameters
+                    CMD="python train_mil.py \
+                        --num_epochs $NUM_EPOCHS \
+                        --learning_rate $LEARNING_RATE \
+                        --weight_decay $WEIGHT_DECAY \
+                        --validation_size $VALIDATION_SIZE \
+                        --random_seed $RANDOM_SEED \
+                        --device $DEVICE \
+                        --model_name $MODEL_NAME \
+                        --num_of_classes $NUM_OF_CLASSES \
+                        --feature_dim $FEATURE_DIM \
+                        --hidden_dim $HIDDEN_DIM_VAL \
+                        --dropout $DROPOUT_VAL \
+                        --metadata_path $METADATA_PATH \
+                        --feature_dir $FEATURE_DIR \
+                        --num_workers $NUM_WORKERS \
+                        --validation_rate $VALIDATION_RATE \
+                        --experiment_name $EXPERIMENT_NAME \
+                        --n_folds $N_FOLDS \
+                        --early_stopping_patience $EARLY_STOPPING_PATIENCE \
+                        --early_stopping_min_delta $EARLY_STOPPING_MIN_DELTA"
+                    
+                    # Add boolean flags if needed
+                    if [ "$DISABLE_PROGRESS_BAR" = true ]; then
+                        CMD="$CMD --disable_progress_bar"
+                    fi
+                    
+                    if [ "$USE_WEIGHTED_SAMPLER" = true ]; then
+                        CMD="$CMD --use_weighted_sampler"
+                    fi
+                    
+                    if [ "$EARLY_STOPPING_RESTORE_BEST_WEIGHTS" = true ]; then
+                        CMD="$CMD --early_stopping_restore_best_weights"
+                    fi
+                    
+                    # Run the command
+                    eval $CMD
+                    
+                    echo "Completed training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL"
+                    echo "----------------------------------------"
+                done
+            done
         done
     done
 done
 
-echo "Grid search completed for NUM_EPOCHS values: ${NUM_EPOCHS_VALUES[*]} and LEARNING_RATE values: ${LEARNING_RATE_VALUES[*]}"
+echo "Grid search completed for NUM_EPOCHS values: ${NUM_EPOCHS_VALUES[*]}, LEARNING_RATE values: ${LEARNING_RATE_VALUES[*]}, WEIGHT_DECAY values: ${WEIGHT_DECAY_VALUES[*]}, HIDDEN_DIM values: ${HIDDEN_DIM[*]}, DROPOUT values: ${DROPOUT[*]}"
