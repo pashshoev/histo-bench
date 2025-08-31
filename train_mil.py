@@ -23,6 +23,67 @@ from scripts.models.MIL.mean_pooling import MeanPooling
 from scripts.models.MIL.clam import CLAM_MB
 from scripts.models.MIL.wikg import WiKG
 
+
+class EarlyStopping:
+    """Early stopping utility to stop training when validation loss stops improving.
+    
+    Args:
+        patience (int): Number of epochs to wait after last improvement before stopping.
+        min_delta (float): Minimum change in the monitored quantity to qualify as improvement.
+        restore_best_weights (bool): Whether to restore model weights from the epoch with the best value.
+        mode (str): One of 'min' or 'max'. In 'min' mode, training will stop when the quantity monitored has stopped decreasing.
+    """
+    
+    def __init__(self, patience=7, min_delta=0, restore_best_weights=True, mode='min'):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.restore_best_weights = restore_best_weights
+        self.mode = mode
+        
+        self.best_score = None
+        self.counter = 0
+        self.best_weights = None
+        self.early_stop = False
+        
+        if mode == 'min':
+            self.monitor_op = np.less
+            self.min_delta *= -1
+        elif mode == 'max':
+            self.monitor_op = np.greater
+        else:
+            raise ValueError(f"Mode {mode} is unknown, use 'min' or 'max'")
+    
+    def __call__(self, val_score, model):
+        """Check if training should be stopped.
+        
+        Args:
+            val_score (float): Current validation score
+            model (torch.nn.Module): Model to potentially restore weights for
+            
+        Returns:
+            bool: True if training should be stopped, False otherwise
+        """
+        if self.best_score is None:
+            self.best_score = val_score
+            self.save_checkpoint(model)
+        elif self.monitor_op(val_score, self.best_score + self.min_delta):
+            self.best_score = val_score
+            self.counter = 0
+            self.save_checkpoint(model)
+        else:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+                if self.restore_best_weights:
+                    model.load_state_dict(self.best_weights)
+        
+        return self.early_stop
+    
+    def save_checkpoint(self, model):
+        """Save model checkpoint."""
+        if self.restore_best_weights:
+            self.best_weights = model.state_dict().copy()
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -180,6 +241,26 @@ def parse_args():
         type=int,
         default=1,
         help="Number of folds for cross-validation (default: 1)"
+    )
+    
+    # Early stopping parameters
+    parser.add_argument(
+        "--early_stopping_patience",
+        type=int,
+        default=None,
+        help="Number of epochs to wait before early stopping (default: None, no early stopping)"
+    )
+    parser.add_argument(
+        "--early_stopping_min_delta",
+        type=float,
+        default=0.0,
+        help="Minimum change in validation loss to qualify as improvement (default: 0.0)"
+    )
+    parser.add_argument(
+        "--early_stopping_restore_best_weights",
+        action="store_true",
+        default=True,
+        help="Restore model weights from the epoch with the best validation loss (default: True)"
     )
     
     return parser.parse_args()
@@ -520,6 +601,17 @@ def train_single_fold(config: dict):
     best_val_loss = float('inf')
     checkpoint_path = "checkpoints/best_model.pt"
     
+    # Initialize early stopping
+    early_stopping = None
+    if config.get("early_stopping_patience") is not None:
+        early_stopping = EarlyStopping(
+            patience=config["early_stopping_patience"],
+            min_delta=config.get("early_stopping_min_delta", 0.0),
+            restore_best_weights=config.get("early_stopping_restore_best_weights", True),
+            mode='min'
+        )
+        logger.info(f"Early stopping enabled with patience={config['early_stopping_patience']}, min_delta={config.get('early_stopping_min_delta', 0.0)}")
+    
     for epoch in range(config["num_epochs"]):
         model.train()
         current_lr = optimizer.param_groups[0]['lr']
@@ -562,11 +654,30 @@ def train_single_fold(config: dict):
         history["losses"]["train"].append(avg_train_loss)
         history["losses"]["val"].append(val_result["loss"])
 
-        if val_result["loss"] < best_val_loss:
-            best_val_loss = val_result["loss"]
-            torch.save(model.state_dict(), checkpoint_path)
+        # Early stopping check (handles both checkpoint saving and early stopping)
+        if early_stopping is not None:
+            if early_stopping(val_result["loss"], model):
+                logger.info(f"Early stopping triggered after {early_stopping.counter} epochs without improvement")
+                logger.info(f"Best validation loss: {early_stopping.best_score:.6f}")
+                # Save the best model checkpoint (with restored weights if applicable)
+                torch.save(model.state_dict(), checkpoint_path)
+                best_val_loss = early_stopping.best_score
+                break
+            else:
+                # Update best_val_loss to match early stopping's best score
+                best_val_loss = early_stopping.best_score
+        else:
+            # Manual checkpoint saving when early stopping is disabled
+            if val_result["loss"] < best_val_loss:
+                best_val_loss = val_result["loss"]
+                torch.save(model.state_dict(), checkpoint_path)
+                logger.info(f"New best validation loss: {best_val_loss:.6f}")
 
     exp.log_metric("best_val_loss", best_val_loss)
+    if early_stopping is not None:
+        exp.log_metric("epochs_without_improvement", early_stopping.counter)
+        exp.log_metric("early_stopping_triggered", early_stopping.early_stop)
+        exp.log_metric("early_stopping_best_score", early_stopping.best_score)
     exp.log_model(
         name="best_model",
         file_or_folder=checkpoint_path,
@@ -620,6 +731,9 @@ if __name__ == "__main__":
         "experiment_name": args.experiment_name,
         "comet_api_key": comet_api_key,
         "n_folds": args.n_folds,
+        "early_stopping_patience": args.early_stopping_patience,
+        "early_stopping_min_delta": args.early_stopping_min_delta,
+        "early_stopping_restore_best_weights": args.early_stopping_restore_best_weights,
     }
 
     if config["n_folds"] > 1:
