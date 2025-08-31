@@ -16,7 +16,7 @@ from torch.nn.functional import softmax
 import matplotlib.pyplot as plt
 import mlflow
 
-from scripts.models.MIL.abmil import ABMIL
+from scripts.models.MIL.abmil2 import ABMIL
 from scripts.models.MIL.transmil import TransMIL
 from scripts.models.MIL.mil_dataset import MILDataset, mil_collate_fn, filter_data
 from scripts.models.MIL.mean_pooling import MeanPooling
