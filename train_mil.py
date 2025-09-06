@@ -434,10 +434,9 @@ def validate(model: torch.nn.Module,
     all_losses = []
 
     with torch.no_grad():
-        for patch_features, slide_labels, attention_masks in tqdm(data_loader, desc="Validating...", disable=config["disable_progress_bar"]):
+        for patch_features, slide_labels in tqdm(data_loader, desc="Validating...", disable=config["disable_progress_bar"]):
             patch_features = patch_features.to(config["device"])
             slide_labels = slide_labels.to(config["device"])
-            attention_masks = attention_masks.to(config["device"])
             
             logits = model(patch_features)
             loss = criterion(logits, slide_labels)
@@ -618,12 +617,11 @@ def train_single_fold(config: dict):
         logger.info(f"Starting Epoch {epoch+1}/{config['num_epochs']} with lr={current_lr:.6f}")
         
         epoch_loss = 0
-        for patch_features, slide_labels, attention_masks in tqdm(train_dataloader, 
+        for patch_features, slide_labels in tqdm(train_dataloader, 
                                                 desc = f"Training Epoch {epoch+1}", 
                                                 disable=False):
             patch_features = patch_features.to(config["device"])
             slide_labels = slide_labels.to(config["device"])
-            attention_masks = attention_masks.to(config["device"])
             
             # Forward pass
             logits = model(patch_features)

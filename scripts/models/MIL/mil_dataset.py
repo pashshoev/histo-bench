@@ -99,33 +99,16 @@ class MILDataset(Dataset):
 
 def mil_collate_fn(batch):
     """
-    Custom collate function for MIL datasets with variable-length bags.
+    Simplified collate function for MIL datasets with batch_size=1.
     
     Args:
         batch: List of tuples (features, label) where features have variable shapes
         
     Returns:
-        tuple: (padded_features, labels, attention_masks)
-            - padded_features: Tensor of shape (batch_size, max_patches, feature_dim)
-            - labels: Tensor of shape (batch_size,)
-            - attention_masks: Tensor of shape (batch_size, max_patches) with 1s for real patches, 0s for padding
+        tuple: (features, labels)
+            - features: Tensor of shape (num_patches, feature_dim) - single bag
+            - labels: Tensor of shape (1,) - single label
     """
-    features_list, labels_list = zip(*batch)
-    
-    # Get the maximum number of patches in this batch
-    max_patches = max(feat.shape[0] for feat in features_list)
-    feature_dim = features_list[0].shape[1]
-    batch_size = len(features_list)
-    
-    # Initialize padded tensors
-    padded_features = torch.zeros(batch_size, max_patches, feature_dim)
-    attention_masks = torch.zeros(batch_size, max_patches, dtype=torch.bool)
-    labels = torch.stack(labels_list)
-    
-    # Fill the tensors
-    for i, (features, _) in enumerate(batch):
-        num_patches = features.shape[0]
-        padded_features[i, :num_patches, :] = features
-        attention_masks[i, :num_patches] = True  # True for real patches, False for padding
-    
-    return padded_features, labels, attention_masks
+    # Since batch_size=1, we just return the single item
+    features, label = batch[0]
+    return features, label
