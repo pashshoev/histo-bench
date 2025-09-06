@@ -12,6 +12,7 @@ LEARNING_RATE_VALUES=(0.0001 0.001)
 WEIGHT_DECAY_VALUES=(0 0.001)
 HIDDEN_DIM=(512 1024) # Not used for MeanPooling
 DROPOUT=(0 0.3) # Not used for MeanPooling
+PATCH_SAMPLING_RATIO_VALUES=(0.1 0.25 0.5 0.75 1.0) # Fraction of patches to sample per slide
 BATCH_SIZE=1
 VALIDATION_SIZE=0.3
 
@@ -50,7 +51,8 @@ for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
         for WEIGHT_DECAY in "${WEIGHT_DECAY_VALUES[@]}"; do
             for HIDDEN_DIM_VAL in "${HIDDEN_DIM[@]}"; do
                 for DROPOUT_VAL in "${DROPOUT[@]}"; do
-                    echo "Running training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL"
+                    for PATCH_SAMPLING_RATIO in "${PATCH_SAMPLING_RATIO_VALUES[@]}"; do
+                        echo "Running training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL, PATCH_SAMPLING_RATIO=$PATCH_SAMPLING_RATIO"
                     
                     # Build command with all parameters
                     CMD="python train_mil.py \
@@ -65,6 +67,7 @@ for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
                         --feature_dim $FEATURE_DIM \
                         --hidden_dim $HIDDEN_DIM_VAL \
                         --dropout $DROPOUT_VAL \
+                        --patch_sampling_ratio $PATCH_SAMPLING_RATIO \
                         --metadata_path $METADATA_PATH \
                         --feature_dir $FEATURE_DIR \
                         --num_workers $NUM_WORKERS \
@@ -90,12 +93,13 @@ for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
                     # Run the command
                     eval $CMD
                     
-                    echo "Completed training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL"
+                    echo "Completed training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL, PATCH_SAMPLING_RATIO=$PATCH_SAMPLING_RATIO"
                     echo "----------------------------------------"
+                    done
                 done
             done
         done
     done
 done
 
-echo "Grid search completed for NUM_EPOCHS values: ${NUM_EPOCHS_VALUES[*]}, LEARNING_RATE values: ${LEARNING_RATE_VALUES[*]}, WEIGHT_DECAY values: ${WEIGHT_DECAY_VALUES[*]}, HIDDEN_DIM values: ${HIDDEN_DIM[*]}, DROPOUT values: ${DROPOUT[*]}"
+echo "Grid search completed for NUM_EPOCHS values: ${NUM_EPOCHS_VALUES[*]}, LEARNING_RATE values: ${LEARNING_RATE_VALUES[*]}, WEIGHT_DECAY values: ${WEIGHT_DECAY_VALUES[*]}, HIDDEN_DIM values: ${HIDDEN_DIM[*]}, DROPOUT values: ${DROPOUT[*]}, PATCH_SAMPLING_RATIO values: ${PATCH_SAMPLING_RATIO_VALUES[*]}"

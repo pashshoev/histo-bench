@@ -263,6 +263,14 @@ def parse_args():
         help="Restore model weights from the epoch with the best validation loss (default: True)"
     )
     
+    # Patch sampling parameters
+    parser.add_argument(
+        "--patch_sampling_ratio",
+        type=float,
+        default=1.0,
+        help="Fraction of patches to randomly sample from each slide (default: 1.0, use all patches)"
+    )
+    
     return parser.parse_args()
 
 
@@ -369,10 +377,12 @@ def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoade
     train_dataset = MILDataset(
         feature_dir=config["feature_dir"],
         metadata_df=train_df,
+        patch_sampling_ratio=config["patch_sampling_ratio"],
     )
     val_dataset = MILDataset(
         feature_dir=config["feature_dir"],
         metadata_df=val_df,
+        patch_sampling_ratio=config["patch_sampling_ratio"],
     )
     
     # Create weighted sampler for training data if requested
@@ -417,6 +427,7 @@ def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoade
     )
     logger.info(f"Train dataset size: {len(train_dataset)} bags")
     logger.info(f"Validation dataset size: {len(val_dataset)} bags")
+    logger.info(f"Patch sampling ratio: {config['patch_sampling_ratio']:.3f} (using {config['patch_sampling_ratio']*100:.1f}% of patches per slide)")
     return train_loader, val_loader
 
 
@@ -729,6 +740,7 @@ if __name__ == "__main__":
         "early_stopping_patience": args.early_stopping_patience,
         "early_stopping_min_delta": args.early_stopping_min_delta,
         "early_stopping_restore_best_weights": args.early_stopping_restore_best_weights,
+        "patch_sampling_ratio": args.patch_sampling_ratio,
     }
 
     if config["n_folds"] > 1:
