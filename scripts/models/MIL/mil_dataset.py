@@ -96,19 +96,3 @@ class MILDataset(Dataset):
                 # 3. For now, we'll re-raise, as it indicates a data integrity issue.
                 raise
 
-
-def mil_collate_fn(batch):
-    """
-    Simplified collate function for MIL datasets with batch_size=1.
-    
-    Args:
-        batch: List of tuples (features, label) where features have variable shapes
-        
-    Returns:
-        tuple: (features, labels)
-            - features: Tensor of shape (num_patches, feature_dim) - single bag
-            - labels: Tensor of shape (1,) - single label
-    """
-    # Since batch_size=1, we just return the single item
-    features, label = batch[0]
-    return features, label

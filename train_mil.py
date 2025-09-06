@@ -18,7 +18,7 @@ import mlflow
 
 from scripts.models.MIL.abmil2 import ABMIL
 from scripts.models.MIL.transmil import TransMIL
-from scripts.models.MIL.mil_dataset import MILDataset, mil_collate_fn, filter_data
+from scripts.models.MIL.mil_dataset import MILDataset, filter_data
 from scripts.models.MIL.mean_pooling import MeanPooling
 from scripts.models.MIL.clam import CLAM_MB
 from scripts.models.MIL.wikg import WiKG
@@ -400,7 +400,6 @@ def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoade
             batch_size=config["batch_size"],
             sampler=sampler,  # Use sampler instead of shuffle
             num_workers=config["num_workers"],
-            collate_fn=mil_collate_fn,  # Use custom collate function
         )
     else:
         train_loader = DataLoader(
@@ -408,7 +407,6 @@ def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoade
             batch_size=config["batch_size"],
             shuffle=True,
             num_workers=config["num_workers"],
-            collate_fn=mil_collate_fn,  # Use custom collate function
         )
     
     val_loader = DataLoader(
@@ -416,7 +414,6 @@ def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoade
         batch_size=config["batch_size"],
         shuffle=False, 
         num_workers=config["num_workers"],
-        collate_fn=mil_collate_fn,  # Use custom collate function
     )
     logger.info(f"Train dataset size: {len(train_dataset)} bags")
     logger.info(f"Validation dataset size: {len(val_dataset)} bags")
