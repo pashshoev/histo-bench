@@ -18,7 +18,7 @@ VALIDATION_SIZE=0.3
 
 # Model configuration
 FEATURE_DIM=2048
-MODEL_NAME="ABMIL"
+MODEL_NAMES=("MeanPooling" "ABMIL" "TransMIL" "CLAM_MB" "WiKG")
 NUM_OF_CLASSES=2
 
 # Training configuration
@@ -32,7 +32,8 @@ METADATA_PATH="experiments/TCGA-Lung/training_labels.csv"
 NUM_WORKERS=11
 
 # Logging configuration
-EXPERIMENT_NAME="TCGA-Lung-ResNet50-ABMIL"
+BASE_EXPERIMENT_NAME="TCGA-Lung-ResNet50"
+EXPERIMENT_NAME="TCGA-Lung-ResNet50"
 USE_WEIGHTED_SAMPLER=false
 DISABLE_PROGRESS_BAR=false
 
@@ -46,55 +47,60 @@ EARLY_STOPPING_RESTORE_BEST_WEIGHTS=true  # Restore model weights from best epoc
 
 
 # Grid search loops
-for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
-    for LEARNING_RATE in "${LEARNING_RATE_VALUES[@]}"; do
-        for WEIGHT_DECAY in "${WEIGHT_DECAY_VALUES[@]}"; do
-            for HIDDEN_DIM_VAL in "${HIDDEN_DIM[@]}"; do
-                for DROPOUT_VAL in "${DROPOUT[@]}"; do
-                    for PATCH_SAMPLING_RATIO in "${PATCH_SAMPLING_RATIO_VALUES[@]}"; do
-                        echo "Running training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL, PATCH_SAMPLING_RATIO=$PATCH_SAMPLING_RATIO"
-                    
-                    # Build command with all parameters
-                    CMD="python train_mil.py \
-                        --num_epochs $NUM_EPOCHS \
-                        --learning_rate $LEARNING_RATE \
-                        --weight_decay $WEIGHT_DECAY \
-                        --validation_size $VALIDATION_SIZE \
-                        --random_seed $RANDOM_SEED \
-                        --device $DEVICE \
-                        --model_name $MODEL_NAME \
-                        --num_of_classes $NUM_OF_CLASSES \
-                        --feature_dim $FEATURE_DIM \
-                        --hidden_dim $HIDDEN_DIM_VAL \
-                        --dropout $DROPOUT_VAL \
-                        --patch_sampling_ratio $PATCH_SAMPLING_RATIO \
-                        --metadata_path $METADATA_PATH \
-                        --feature_dir $FEATURE_DIR \
-                        --num_workers $NUM_WORKERS \
-                        --validation_rate $VALIDATION_RATE \
-                        --experiment_name $EXPERIMENT_NAME \
-                        --n_folds $N_FOLDS \
-                        --early_stopping_patience $EARLY_STOPPING_PATIENCE \
-                        --early_stopping_min_delta $EARLY_STOPPING_MIN_DELTA"
-                    
-                    # Add boolean flags if needed
-                    if [ "$DISABLE_PROGRESS_BAR" = true ]; then
-                        CMD="$CMD --disable_progress_bar"
-                    fi
-                    
-                    if [ "$USE_WEIGHTED_SAMPLER" = true ]; then
-                        CMD="$CMD --use_weighted_sampler"
-                    fi
-                    
-                    if [ "$EARLY_STOPPING_RESTORE_BEST_WEIGHTS" = true ]; then
-                        CMD="$CMD --early_stopping_restore_best_weights"
-                    fi
-                    
-                    # Run the command
-                    eval $CMD
-                    
-                    echo "Completed training with NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL, PATCH_SAMPLING_RATIO=$PATCH_SAMPLING_RATIO"
-                    echo "----------------------------------------"
+for MODEL_NAME in "${MODEL_NAMES[@]}"; do
+    # Set experiment name based on current model
+    # EXPERIMENT_NAME="${BASE_EXPERIMENT_NAME}-${MODEL_NAME}" # Keep it simple for now
+    
+    for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
+        for LEARNING_RATE in "${LEARNING_RATE_VALUES[@]}"; do
+            for WEIGHT_DECAY in "${WEIGHT_DECAY_VALUES[@]}"; do
+                for HIDDEN_DIM_VAL in "${HIDDEN_DIM[@]}"; do
+                    for DROPOUT_VAL in "${DROPOUT[@]}"; do
+                        for PATCH_SAMPLING_RATIO in "${PATCH_SAMPLING_RATIO_VALUES[@]}"; do
+                            echo "Running training with MODEL_NAME=$MODEL_NAME, NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL, PATCH_SAMPLING_RATIO=$PATCH_SAMPLING_RATIO"
+                        
+                            # Build command with all parameters
+                            CMD="python train_mil.py \
+                                --num_epochs $NUM_EPOCHS \
+                                --learning_rate $LEARNING_RATE \
+                                --weight_decay $WEIGHT_DECAY \
+                                --validation_size $VALIDATION_SIZE \
+                                --random_seed $RANDOM_SEED \
+                                --device $DEVICE \
+                                --model_name $MODEL_NAME \
+                                --num_of_classes $NUM_OF_CLASSES \
+                                --feature_dim $FEATURE_DIM \
+                                --hidden_dim $HIDDEN_DIM_VAL \
+                                --dropout $DROPOUT_VAL \
+                                --patch_sampling_ratio $PATCH_SAMPLING_RATIO \
+                                --metadata_path $METADATA_PATH \
+                                --feature_dir $FEATURE_DIR \
+                                --num_workers $NUM_WORKERS \
+                                --validation_rate $VALIDATION_RATE \
+                                --experiment_name $EXPERIMENT_NAME \
+                                --n_folds $N_FOLDS \
+                                --early_stopping_patience $EARLY_STOPPING_PATIENCE \
+                                --early_stopping_min_delta $EARLY_STOPPING_MIN_DELTA"
+                            
+                            # Add boolean flags if needed
+                            if [ "$DISABLE_PROGRESS_BAR" = true ]; then
+                                CMD="$CMD --disable_progress_bar"
+                            fi
+                            
+                            if [ "$USE_WEIGHTED_SAMPLER" = true ]; then
+                                CMD="$CMD --use_weighted_sampler"
+                            fi
+                            
+                            if [ "$EARLY_STOPPING_RESTORE_BEST_WEIGHTS" = true ]; then
+                                CMD="$CMD --early_stopping_restore_best_weights"
+                            fi
+                            
+                            # Run the command
+                            eval $CMD
+                            
+                            echo "Completed training with MODEL_NAME=$MODEL_NAME, NUM_EPOCHS=$NUM_EPOCHS, LEARNING_RATE=$LEARNING_RATE, WEIGHT_DECAY=$WEIGHT_DECAY, HIDDEN_DIM=$HIDDEN_DIM_VAL, DROPOUT=$DROPOUT_VAL, PATCH_SAMPLING_RATIO=$PATCH_SAMPLING_RATIO"
+                            echo "----------------------------------------"
+                        done
                     done
                 done
             done
@@ -102,4 +108,4 @@ for NUM_EPOCHS in "${NUM_EPOCHS_VALUES[@]}"; do
     done
 done
 
-echo "Grid search completed for NUM_EPOCHS values: ${NUM_EPOCHS_VALUES[*]}, LEARNING_RATE values: ${LEARNING_RATE_VALUES[*]}, WEIGHT_DECAY values: ${WEIGHT_DECAY_VALUES[*]}, HIDDEN_DIM values: ${HIDDEN_DIM[*]}, DROPOUT values: ${DROPOUT[*]}, PATCH_SAMPLING_RATIO values: ${PATCH_SAMPLING_RATIO_VALUES[*]}"
+echo "Grid search completed for MODEL_NAMES: ${MODEL_NAMES[*]}, NUM_EPOCHS values: ${NUM_EPOCHS_VALUES[*]}, LEARNING_RATE values: ${LEARNING_RATE_VALUES[*]}, WEIGHT_DECAY values: ${WEIGHT_DECAY_VALUES[*]}, HIDDEN_DIM values: ${HIDDEN_DIM[*]}, DROPOUT values: ${DROPOUT[*]}, PATCH_SAMPLING_RATIO values: ${PATCH_SAMPLING_RATIO_VALUES[*]}"
