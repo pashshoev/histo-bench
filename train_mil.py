@@ -7,6 +7,7 @@ import torch
 import numpy as np
 import pandas as pd
 import random
+import copy
 from tqdm import tqdm
 from loguru import logger
 from torch.utils.data import DataLoader
@@ -82,7 +83,8 @@ class EarlyStopping:
     def save_checkpoint(self, model):
         """Save model checkpoint."""
         if self.restore_best_weights:
-            self.best_weights = model.state_dict().copy()
+            # Deep copy to prevent in-place modifications during training affecting saved weights
+            self.best_weights = copy.deepcopy(model.state_dict())
 
 # Load environment variables from .env file
 load_dotenv()
@@ -242,6 +244,12 @@ def parse_args():
         default=1,
         help="Number of folds for cross-validation (default: 1)"
     )
+    parser.add_argument(
+        "--single_fold_test_size",
+        type=float,
+        default=0.0,
+        help="When n_folds==1, fraction of data (by groups) to reserve as test. 0.0 disables test split."
+    )
     
     # Early stopping parameters
     parser.add_argument(
@@ -254,13 +262,19 @@ def parse_args():
         "--early_stopping_min_delta",
         type=float,
         default=0.0,
-        help="Minimum change in validation loss to qualify as improvement (default: 0.0)"
+        help="Minimum change in EMA validation AUC to qualify as improvement (default: 0.0)"
     )
     parser.add_argument(
         "--early_stopping_restore_best_weights",
         action="store_true",
         default=True,
-        help="Restore model weights from the epoch with the best validation loss (default: True)"
+        help="Restore model weights from the epoch with the best EMA validation AUC (default: True)"
+    )
+    parser.add_argument(
+        "--ema_alpha",
+        type=float,
+        default=0.9,
+        help="EMA smoothing factor for validation AUC (0-1, higher=more smoothing)"
     )
     
     # Patch sampling parameters
@@ -337,8 +351,16 @@ def setup_scheduler(optimizer: torch.optim.Optimizer, config: dict) -> torch.opt
     return scheduler
 
 
-def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoader]:
-    """Create and return train and validation DataLoaders for a specific fold"""
+def get_data_loaders(config: dict, fold: int = 0):
+    """Create and return train, validation, and test DataLoaders for a specific fold.
+
+    For cross-validation (n_folds > 1):
+      - Hold out one fold as test
+      - Split the remaining folds into train/val with GroupShuffleSplit
+
+    For single split (n_folds == 1):
+      - Return train/val only; test loader is None
+    """
     from torch.utils.data import WeightedRandomSampler
     from sklearn.model_selection import GroupKFold
     
@@ -351,28 +373,55 @@ def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoade
     logger.info(f"Slides per patient distribution:\n{counts}")
     
     if config["n_folds"] > 1:
-        # Use GroupKFold for cross-validation
-        gkf = GroupKFold(n_splits=config["n_folds"], random_state=config["random_seed"], shuffle=True)
+        # Use GroupKFold for cross-validation (no shuffle in GroupKFold)
+        gkf = GroupKFold(n_splits=config["n_folds"]) 
         splits = list(gkf.split(full_dataset, groups=full_dataset['case_id']))
-        train_idx, val_idx = splits[fold]
-        logger.info(f"Cross-validation fold {fold + 1}/{config['n_folds']}")
-    else:
-        # Use GroupShuffleSplit for single train/val split (n_folds=1)
+        # Select one fold as test
+        remaining_idx, test_idx = splits[fold]
+        remaining_df = full_dataset.iloc[remaining_idx].copy()
+        # Split remaining into train/val by groups
         from sklearn.model_selection import GroupShuffleSplit
         gss = GroupShuffleSplit(n_splits=1, test_size=config["validation_size"], random_state=config["random_seed"])
-        train_idx, val_idx = next(gss.split(full_dataset, groups=full_dataset['case_id']))
-        logger.info("Single train/validation split")
+        rem_train_local_idx, rem_val_local_idx = next(gss.split(remaining_df, groups=remaining_df['case_id']))
+        train_idx = remaining_df.iloc[rem_train_local_idx].index.values
+        val_idx = remaining_df.iloc[rem_val_local_idx].index.values
+        logger.info(f"Cross-validation fold {fold + 1}/{config['n_folds']} (with test holdout)")
+    else:
+        # Single-fold mode. Optionally create a held-out test split first, then split remaining into train/val
+        from sklearn.model_selection import GroupShuffleSplit
+        test_idx = None
+        if config.get("single_fold_test_size", 0.0) and config["single_fold_test_size"] > 0.0:
+            gss_test = GroupShuffleSplit(n_splits=1, test_size=config["single_fold_test_size"], random_state=config["random_seed"])
+            remaining_idx, test_idx = next(gss_test.split(full_dataset, groups=full_dataset['case_id']))
+            remaining_df = full_dataset.iloc[remaining_idx].copy()
+            logger.info(f"Single-fold: using test_size={config['single_fold_test_size']}")
+            # Now split remaining into train/val
+            gss_val = GroupShuffleSplit(n_splits=1, test_size=config["validation_size"], random_state=config["random_seed"])
+            rem_train_local_idx, rem_val_local_idx = next(gss_val.split(remaining_df, groups=remaining_df['case_id']))
+            train_idx = remaining_df.iloc[rem_train_local_idx].index.values
+            val_idx = remaining_df.iloc[rem_val_local_idx].index.values
+            logger.info("Single train/validation/test split")
+        else:
+            # Only train/val
+            gss = GroupShuffleSplit(n_splits=1, test_size=config["validation_size"], random_state=config["random_seed"])
+            train_idx, val_idx = next(gss.split(full_dataset, groups=full_dataset['case_id']))
+            logger.info("Single train/validation split (no test)")
     
     train_df = full_dataset.iloc[train_idx].copy()
     val_df = full_dataset.iloc[val_idx].copy()
+    test_df = None if test_idx is None else full_dataset.iloc[test_idx].copy()
     
     # Ensure patient sets are disjoint
     train_patients = set(train_df['case_id'])
     val_patients = set(val_df['case_id'])
     assert train_patients.isdisjoint(val_patients), "Train and validation patient sets must be disjoint"
+    if test_df is not None:
+        test_patients = set(test_df['case_id'])
+        assert train_patients.isdisjoint(test_patients), "Train and test patient sets must be disjoint"
+        assert val_patients.isdisjoint(test_patients), "Validation and test patient sets must be disjoint"
     
-    logger.info(f"Fold {fold + 1}: train={len(train_patients)} patients, validation={len(val_patients)} patients")
-    logger.info(f"Fold {fold + 1}: train={len(train_df)} slides, validation={len(val_df)} slides")
+    logger.info(f"Fold {fold + 1}: train={len(train_patients)} patients, validation={len(val_patients)} patients" + (f", test={len(test_patients)} patients" if test_df is not None else ""))
+    logger.info(f"Fold {fold + 1}: train={len(train_df)} slides, validation={len(val_df)} slides" + (f", test={len(test_df)} slides" if test_df is not None else ""))
     
     train_dataset = MILDataset(
         feature_dir=config["feature_dir"],
@@ -382,6 +431,11 @@ def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoade
     val_dataset = MILDataset(
         feature_dir=config["feature_dir"],
         metadata_df=val_df,
+        patch_sampling_ratio=config["patch_sampling_ratio"],
+    )
+    test_dataset = None if test_df is None else MILDataset(
+        feature_dir=config["feature_dir"],
+        metadata_df=test_df,
         patch_sampling_ratio=config["patch_sampling_ratio"],
     )
     
@@ -425,10 +479,18 @@ def get_data_loaders(config: dict, fold: int = 0) -> tuple[DataLoader, DataLoade
         shuffle=False, 
         num_workers=config["num_workers"],
     )
+    test_loader = None if test_dataset is None else DataLoader(
+        dataset = test_dataset,
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=config["num_workers"],
+    )
     logger.info(f"Train dataset size: {len(train_dataset)} bags")
     logger.info(f"Validation dataset size: {len(val_dataset)} bags")
+    if test_dataset is not None:
+        logger.info(f"Test dataset size: {len(test_dataset)} bags")
     logger.info(f"Patch sampling ratio: {config['patch_sampling_ratio']:.3f} (using {config['patch_sampling_ratio']*100:.1f}% of patches per slide)")
-    return train_loader, val_loader
+    return train_loader, val_loader, test_loader
 
 
 def validate(model: torch.nn.Module, 
@@ -499,7 +561,7 @@ def cross_validate(config: dict):
         fold_result = train_single_fold(fold_config)
         fold_results.append(fold_result)
         
-        logger.info(f"Fold {fold + 1} completed. Best val loss: {fold_result['best_val_loss']:.6f}")
+        logger.info(f"Fold {fold + 1} completed. Best EMA val AUC: {fold_result['best_val_auc_ema']:.6f}")
     
     # Aggregate results across folds
     aggregate_cv_results(fold_results, config)
@@ -514,25 +576,25 @@ def aggregate_cv_results(fold_results: list, config: dict):
     logger.info(f"{'='*50}")
     
     # Extract key metrics
-    val_losses = [r['best_val_loss'] for r in fold_results]
-    val_aucs_macro = [r['final_val_auc_macro'] for r in fold_results]
-    accuracies = [r['final_val_accuracy'] for r in fold_results]
-    weighted_f1_scores = [r['final_val_weighted_f1'] for r in fold_results]
+    val_ema_aucs = [r['best_val_auc_ema'] for r in fold_results]
+    test_aucs_macro = [r['final_test_auc_macro'] for r in fold_results if r['final_test_auc_macro'] is not None]
+    test_accuracies = [r['final_test_accuracy'] for r in fold_results if r['final_test_accuracy'] is not None]
+    test_weighted_f1_scores = [r['final_test_weighted_f1'] for r in fold_results if r['final_test_weighted_f1'] is not None]
     
     # Calculate statistics
-    mean_val_loss = np.mean(val_losses)
-    std_val_loss = np.std(val_losses)
-    mean_auc_macro = np.mean(val_aucs_macro)
-    std_auc_macro = np.std(val_aucs_macro)
-    mean_accuracy = np.mean(accuracies)
-    std_accuracy = np.std(accuracies)
-    mean_weighted_f1 = np.mean(weighted_f1_scores)
-    std_weighted_f1 = np.std(weighted_f1_scores)
+    mean_val_auc_ema = np.mean(val_ema_aucs)
+    std_val_auc_ema = np.std(val_ema_aucs)
+    mean_test_auc_macro = float(np.mean(test_aucs_macro)) if len(test_aucs_macro) > 0 else float('nan')
+    std_test_auc_macro = float(np.std(test_aucs_macro)) if len(test_aucs_macro) > 0 else float('nan')
+    mean_test_accuracy = float(np.mean(test_accuracies)) if len(test_accuracies) > 0 else float('nan')
+    std_test_accuracy = float(np.std(test_accuracies)) if len(test_accuracies) > 0 else float('nan')
+    mean_test_weighted_f1 = float(np.mean(test_weighted_f1_scores)) if len(test_weighted_f1_scores) > 0 else float('nan')
+    std_test_weighted_f1 = float(np.std(test_weighted_f1_scores)) if len(test_weighted_f1_scores) > 0 else float('nan')
     
-    logger.info(f"Mean Validation Loss: {mean_val_loss:.6f} ± {std_val_loss:.6f}")
-    logger.info(f"Mean AUC (Macro): {mean_auc_macro:.6f} ± {std_auc_macro:.6f}")
-    logger.info(f"Mean Accuracy: {mean_accuracy:.6f} ± {std_accuracy:.6f}")
-    logger.info(f"Mean Weighted F1: {mean_weighted_f1:.6f} ± {std_weighted_f1:.6f}")
+    logger.info(f"Mean EMA Validation AUC: {mean_val_auc_ema:.6f} ± {std_val_auc_ema:.6f}")
+    logger.info(f"Mean TEST AUC (Macro): {mean_test_auc_macro:.6f} ± {std_test_auc_macro:.6f}")
+    logger.info(f"Mean TEST Accuracy: {mean_test_accuracy:.6f} ± {std_test_accuracy:.6f}")
+    logger.info(f"Mean TEST Weighted F1: {mean_test_weighted_f1:.6f} ± {std_test_weighted_f1:.6f}")
     
     # Create summary run in the same experiment
     summary_exp = Experiment(
@@ -542,14 +604,14 @@ def aggregate_cv_results(fold_results: list, config: dict):
     )
     # Log aggregated metrics
     summary_exp.log_metrics({
-        "mean_val_loss": mean_val_loss,
-        "std_val_loss": std_val_loss,
-        "mean_auc_macro": mean_auc_macro,
-        "std_auc_macro": std_auc_macro,
-        "mean_accuracy": mean_accuracy,
-        "std_accuracy": std_accuracy,
-        "mean_weighted_f1": mean_weighted_f1,
-        "std_weighted_f1": std_weighted_f1,
+        "mean_val_auc_ema": mean_val_auc_ema,
+        "std_val_auc_ema": std_val_auc_ema,
+        "mean_test_auc_macro": mean_test_auc_macro,
+        "std_test_auc_macro": std_test_auc_macro,
+        "mean_test_accuracy": mean_test_accuracy,
+        "std_test_accuracy": std_test_accuracy,
+        "mean_test_weighted_f1": mean_test_weighted_f1,
+        "std_test_weighted_f1": std_test_weighted_f1,
         "n_folds": config['n_folds']
     })
     
@@ -595,7 +657,7 @@ def train_single_fold(config: dict):
         else:
             logger.info("No class weights specified, using default CrossEntropyLoss")
     
-    train_dataloader, val_dataloader = get_data_loaders(config, fold=config.get('current_fold', 0))
+    train_dataloader, val_dataloader, test_dataloader = get_data_loaders(config, fold=config.get('current_fold', 0))
 
     history = {
         "epoch": [],
@@ -605,7 +667,7 @@ def train_single_fold(config: dict):
         }
     }
 
-    best_val_loss = float('inf')
+    best_val_auc_ema = float('-inf')
     checkpoint_path = "checkpoints/best_model.pt"
     
     # Initialize early stopping
@@ -615,10 +677,11 @@ def train_single_fold(config: dict):
             patience=config["early_stopping_patience"],
             min_delta=config.get("early_stopping_min_delta", 0.0),
             restore_best_weights=config.get("early_stopping_restore_best_weights", True),
-            mode='min'
+            mode='max'
         )
-        logger.info(f"Early stopping enabled with patience={config['early_stopping_patience']}, min_delta={config.get('early_stopping_min_delta', 0.0)}")
+        logger.info(f"Early stopping enabled (monitor=EMA val AUC, mode=max) with patience={config['early_stopping_patience']}, min_delta={config.get('early_stopping_min_delta', 0.0)}, ema_alpha={config.get('ema_alpha', 0.9)}")
     
+    val_auc_ema = None
     for epoch in range(config["num_epochs"]):
         model.train()
         current_lr = optimizer.param_groups[0]['lr']
@@ -648,38 +711,46 @@ def train_single_fold(config: dict):
         history["epoch"].append(epoch+1)
         avg_train_loss = epoch_loss / len(train_dataloader)
         val_result = validate(model, val_dataloader, criterion, config)
+        # Compute EMA for validation AUC (macro)
+        val_auc = float(val_result["auc_macro"])
+        if val_auc_ema is None:
+            val_auc_ema = val_auc
+        else:
+            alpha = config.get("ema_alpha", 0.9)
+            val_auc_ema = alpha * val_auc_ema + (1 - alpha) * val_auc
         logger.info(f"Validation report: \n{val_result['report']}")
-        logger.info(f"Losses: train = {avg_train_loss:.10f}, val = {val_result['loss']:.4f}")
+        logger.info(f"Train loss = {avg_train_loss:.10f}, Val loss = {val_result['loss']:.4f}, Val AUC (macro) = {val_auc:.6f}, Val AUC EMA = {val_auc_ema:.6f}")
         
         # Log metrics including current learning rate
         exp.log_metrics({"train_loss": avg_train_loss, "val_loss": val_result["loss"]}, epoch=epoch)
-        exp.log_metrics({"auc_macro": val_result["auc_macro"], "auc_micro": val_result["auc_micro"]}, epoch=epoch)
+        exp.log_metrics({"val_auc": val_result["auc_macro"], "val_auc_ema": val_auc_ema, "val_auc_micro": val_result["auc_micro"]}, epoch=epoch)
         exp.log_metrics(val_result["report"], epoch=epoch)
         exp.log_metrics({"learning_rate": current_lr}, epoch=epoch)
         
         history["losses"]["train"].append(avg_train_loss)
         history["losses"]["val"].append(val_result["loss"])
 
-        # Early stopping check (handles both checkpoint saving and early stopping)
-        if early_stopping is not None:
-            if early_stopping(val_result["loss"], model):
-                logger.info(f"Early stopping triggered after {early_stopping.counter} epochs without improvement")
-                logger.info(f"Best validation loss: {early_stopping.best_score:.6f}")
-                # Save the best model checkpoint (with restored weights if applicable)
-                torch.save(model.state_dict(), checkpoint_path)
-                best_val_loss = early_stopping.best_score
-                break
-            else:
-                # Update best_val_loss to match early stopping's best score
-                best_val_loss = early_stopping.best_score
-        else:
-            # Manual checkpoint saving when early stopping is disabled
-            if val_result["loss"] < best_val_loss:
-                best_val_loss = val_result["loss"]
-                torch.save(model.state_dict(), checkpoint_path)
-                logger.info(f"New best validation loss: {best_val_loss:.6f}")
+        # Checkpoint saving based on EMA val AUC and early stopping on EMA val AUC
+        if val_auc_ema > best_val_auc_ema:
+            best_val_auc_ema = val_auc_ema
+            torch.save(model.state_dict(), checkpoint_path)
+            logger.info(f"New best EMA val AUC: {best_val_auc_ema:.6f}")
 
-    exp.log_metric("best_val_loss", best_val_loss)
+        if early_stopping is not None:
+            if early_stopping(val_auc_ema, model):
+                logger.info(f"Early stopping triggered after {early_stopping.counter} epochs without improvement")
+                logger.info(f"Best EMA validation AUC: {early_stopping.best_score:.6f}")
+                # Ensure the best model checkpoint is saved (weights already restored if configured)
+                torch.save(model.state_dict(), checkpoint_path)
+                break
+
+    # Ensure final model corresponds to the best EMA val AUC
+    try:
+        model.load_state_dict(torch.load(checkpoint_path, map_location=config["device"]))
+    except Exception:
+        pass
+
+    exp.log_metric("best_val_auc_ema", best_val_auc_ema)
     if early_stopping is not None:
         exp.log_metric("epochs_without_improvement", early_stopping.counter)
         exp.log_metric("early_stopping_triggered", early_stopping.early_stop)
@@ -695,16 +766,31 @@ def train_single_fold(config: dict):
     )    
     exp.end()
     
+    # Evaluate on test set if available
+    test_result = None
+    if test_dataloader is not None:
+        test_result = validate(model, test_dataloader, criterion, config)
+        exp.log_metrics({
+            "test_loss": test_result["loss"],
+            "test_auc_macro": test_result["auc_macro"],
+            "test_auc_micro": test_result["auc_micro"],
+        })
+        exp.log_metrics(test_result["report"])
+
     logger.info("Training finished successfully!")
     
     # Return results for cross-validation aggregation
     # Use the last validation result from training (batch_size=1, so this is already final)
     return {
-        'best_val_loss': best_val_loss,
+        'best_val_auc_ema': best_val_auc_ema,
         'final_val_auc_macro': val_result['auc_macro'],
         'final_val_accuracy': val_result['report']['accuracy'],
         'final_val_weighted_f1': val_result['report']['weighted avg']['f1-score'],
-        'final_val_report': val_result['report']
+        'final_val_report': val_result['report'],
+        'final_test_auc_macro': (test_result['auc_macro'] if test_result is not None else None),
+        'final_test_accuracy': (test_result['report']['accuracy'] if test_result is not None else None),
+        'final_test_weighted_f1': (test_result['report']['weighted avg']['f1-score'] if test_result is not None else None),
+        'final_test_report': (test_result['report'] if test_result is not None else None),
     }
 
 
@@ -737,10 +823,12 @@ if __name__ == "__main__":
         "experiment_name": args.experiment_name,
         "comet_api_key": comet_api_key,
         "n_folds": args.n_folds,
+        "single_fold_test_size": args.single_fold_test_size,
         "early_stopping_patience": args.early_stopping_patience,
         "early_stopping_min_delta": args.early_stopping_min_delta,
         "early_stopping_restore_best_weights": args.early_stopping_restore_best_weights,
         "patch_sampling_ratio": args.patch_sampling_ratio,
+        "ema_alpha": args.ema_alpha,
     }
 
     if config["n_folds"] > 1:

@@ -15,6 +15,7 @@ DROPOUT=(0 0.3) # Not used for MeanPooling
 PATCH_SAMPLING_RATIO_VALUES=(0.1 0.25 0.5 0.75 1.0) # Fraction of patches to sample per slide
 BATCH_SIZE=1
 VALIDATION_SIZE=0.3
+SINGLE_FOLD_TEST_SIZE=0.3
 
 # Model configuration
 FEATURE_DIM=2048
@@ -44,6 +45,9 @@ N_FOLDS=1
 EARLY_STOPPING_PATIENCE=5  # Number of epochs to wait before early stopping (None to disable)
 EARLY_STOPPING_MIN_DELTA=0.001  # Minimum change in validation loss to qualify as improvement
 EARLY_STOPPING_RESTORE_BEST_WEIGHTS=true  # Restore model weights from best epoch
+
+# EMA configuration
+EMA_ALPHA=0.9
 
 
 # Grid search loops
@@ -80,7 +84,9 @@ for MODEL_NAME in "${MODEL_NAMES[@]}"; do
                                 --experiment_name $EXPERIMENT_NAME \
                                 --n_folds $N_FOLDS \
                                 --early_stopping_patience $EARLY_STOPPING_PATIENCE \
-                                --early_stopping_min_delta $EARLY_STOPPING_MIN_DELTA"
+                                --early_stopping_min_delta $EARLY_STOPPING_MIN_DELTA \
+                                --ema_alpha $EMA_ALPHA \
+                                --single_fold_test_size $SINGLE_FOLD_TEST_SIZE"
                             
                             # Add boolean flags if needed
                             if [ "$DISABLE_PROGRESS_BAR" = true ]; then
