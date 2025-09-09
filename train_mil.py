@@ -464,7 +464,7 @@ def get_data_loaders(config: dict, fold: int = 0):
             batch_size=config["batch_size"],
             sampler=sampler,  # Use sampler instead of shuffle
             num_workers=config["num_workers"],
-            pin_memory = True if config["device"] == "cuda" else False,
+            pin_memory = False,
         )
     else:
         train_loader = DataLoader(
@@ -472,7 +472,7 @@ def get_data_loaders(config: dict, fold: int = 0):
             batch_size=config["batch_size"],
             shuffle=True,
             num_workers=config["num_workers"],
-            pin_memory = True if config["device"] == "cuda" else False,
+            pin_memory = False,
         )
     
     val_loader = DataLoader(
@@ -480,14 +480,14 @@ def get_data_loaders(config: dict, fold: int = 0):
         batch_size=config["batch_size"],
         shuffle=False, 
         num_workers=config["num_workers"],
-        pin_memory = True if config["device"] == "cuda" else False,
+        pin_memory = False,
     )
     test_loader = None if test_dataset is None else DataLoader(
         dataset = test_dataset,
         batch_size=config["batch_size"],
         shuffle=False,
         num_workers=config["num_workers"],
-        pin_memory = True if config["device"] == "cuda" else False,
+        pin_memory = False,
     )
     logger.info(f"Train dataset size: {len(train_dataset)} bags")
     logger.info(f"Validation dataset size: {len(val_dataset)} bags")
