@@ -77,7 +77,38 @@ class MILDataset(Dataset):
             features = None
             try:
                 with h5py.File(feature_path, 'r') as f:
-                    features = torch.from_numpy(f['features'][()]).float()
+                    if self.patch_sampling_ratio < 1.0:
+                        # Get dataset shape without loading data
+                        dataset_shape = f['features'].shape
+                        
+                        # Determine which dimension contains patches
+                        if len(dataset_shape) == 2:
+                            # Shape: (num_patches, feature_dim)
+                            num_patches = dataset_shape[0]
+                            patch_dim = 0
+                        elif len(dataset_shape) == 3 and dataset_shape[0] == 1:
+                            # Shape: (1, num_patches, feature_dim) - batch first
+                            num_patches = dataset_shape[1]
+                            patch_dim = 1
+                        else:
+                            # Fallback: assume first dimension is patches
+                            num_patches = dataset_shape[0]
+                            patch_dim = 0
+                        
+                        num_samples = max(1, int(num_patches * self.patch_sampling_ratio))
+                        
+                        # Sample indices first
+                        patch_indices = np.random.choice(num_patches, size=num_samples, replace=False)
+                        patch_indices.sort()  # Better for HDF5 chunked reads
+                        
+                        # Read only sampled patches based on data layout
+                        if patch_dim == 0:
+                            features = torch.from_numpy(f['features'][patch_indices]).float()
+                        else:  # patch_dim == 1
+                            features = torch.from_numpy(f['features'][0, patch_indices]).float()
+                    else:
+                        # Only load all data when using 100%
+                        features = torch.from_numpy(f['features'][()]).float()
 
                 label_tensor = torch.tensor(label, dtype=torch.long) 
                 
@@ -87,15 +118,6 @@ class MILDataset(Dataset):
                 if label_tensor.dim() == 3 and label_tensor.shape[0] == 1:
                     # Drop the batch dimension if it's 1
                     label_tensor = label_tensor.squeeze(0)
-                
-                # Random patch sampling if ratio < 1.0
-                if self.patch_sampling_ratio < 1.0:
-                    num_patches = features.shape[0]
-                    num_samples = max(1, int(num_patches * self.patch_sampling_ratio))
-                    
-                    # Randomly sample patch indices
-                    patch_indices = np.random.choice(num_patches, size=num_samples, replace=False)
-                    features = features[patch_indices]
                 
                 # logger.info(f"Feature shape: {features.shape}, Label shape: {label_tensor.shape}")
                 return features, label_tensor

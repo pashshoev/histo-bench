@@ -464,6 +464,7 @@ def get_data_loaders(config: dict, fold: int = 0):
             batch_size=config["batch_size"],
             sampler=sampler,  # Use sampler instead of shuffle
             num_workers=config["num_workers"],
+            pin_memory = True if config["device"] == "cuda" else False,
         )
     else:
         train_loader = DataLoader(
@@ -471,6 +472,7 @@ def get_data_loaders(config: dict, fold: int = 0):
             batch_size=config["batch_size"],
             shuffle=True,
             num_workers=config["num_workers"],
+            pin_memory = True if config["device"] == "cuda" else False,
         )
     
     val_loader = DataLoader(
@@ -478,12 +480,14 @@ def get_data_loaders(config: dict, fold: int = 0):
         batch_size=config["batch_size"],
         shuffle=False, 
         num_workers=config["num_workers"],
+        pin_memory = True if config["device"] == "cuda" else False,
     )
     test_loader = None if test_dataset is None else DataLoader(
         dataset = test_dataset,
         batch_size=config["batch_size"],
         shuffle=False,
         num_workers=config["num_workers"],
+        pin_memory = True if config["device"] == "cuda" else False,
     )
     logger.info(f"Train dataset size: {len(train_dataset)} bags")
     logger.info(f"Validation dataset size: {len(val_dataset)} bags")
@@ -505,8 +509,8 @@ def validate(model: torch.nn.Module,
 
     with torch.no_grad():
         for patch_features, slide_labels in tqdm(data_loader, desc="Validating...", disable=config["disable_progress_bar"]):
-            patch_features = patch_features.to(config["device"])
-            slide_labels = slide_labels.to(config["device"])
+            patch_features = patch_features.to(config["device"], non_blocking=True)
+            slide_labels = slide_labels.to(config["device"], non_blocking=True)
             
             logits = model(patch_features)
             loss = criterion(logits, slide_labels)
@@ -691,8 +695,8 @@ def train_single_fold(config: dict):
         for patch_features, slide_labels in tqdm(train_dataloader, 
                                                 desc = f"Training Epoch {epoch+1}", 
                                                 disable=False):
-            patch_features = patch_features.to(config["device"])
-            slide_labels = slide_labels.to(config["device"])
+            patch_features = patch_features.to(config["device"], non_blocking=True)
+            slide_labels = slide_labels.to(config["device"], non_blocking=True)
             
             # Forward pass
             logits = model(patch_features)
