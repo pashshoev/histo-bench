@@ -94,7 +94,7 @@ class MILDataset(Dataset):
                 # Random patch sampling if ratio < 1.0
                 if self.patch_sampling_ratio < 1.0:
                     num_patches = features.shape[0]
-                    num_samples = max(1, int(num_patches * self.patch_sampling_ratio))
+                    num_samples = max(10, int(num_patches * self.patch_sampling_ratio))
                     
                     # Randomly sample patch indices
                     patch_indices = np.random.choice(num_patches, size=num_samples, replace=False)
