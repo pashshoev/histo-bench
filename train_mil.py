@@ -793,7 +793,6 @@ def train_single_fold(config: dict):
             logger.info(f"Test dataset for fold {config.get('current_fold', 0)} saved to Comet ML")
             
             # Clean up temporary file
-            import os
             if os.path.exists(test_csv_path):
                 os.remove(test_csv_path)
 
