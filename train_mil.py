@@ -768,7 +768,6 @@ def train_single_fold(config: dict):
             "description": "Best model checkpoint based on val loss"
         }
     )    
-    exp.end()
     
     # Evaluate on test set if available
     test_result = None
@@ -795,6 +794,7 @@ def train_single_fold(config: dict):
             # Clean up temporary file
             if os.path.exists(test_csv_path):
                 os.remove(test_csv_path)
+    exp.end()
 
     logger.info("Training finished successfully!")
     
