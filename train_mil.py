@@ -494,7 +494,7 @@ def get_data_loaders(config: dict, fold: int = 0):
     if test_dataset is not None:
         logger.info(f"Test dataset size: {len(test_dataset)} bags")
     logger.info(f"Patch sampling ratio: {config['patch_sampling_ratio']:.3f} (using {config['patch_sampling_ratio']*100:.1f}% of patches per slide)")
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader, test_loader, test_df
 
 
 def validate(model: torch.nn.Module, 
@@ -661,7 +661,7 @@ def train_single_fold(config: dict):
         else:
             logger.info("No class weights specified, using default CrossEntropyLoss")
     
-    train_dataloader, val_dataloader, test_dataloader = get_data_loaders(config, fold=config.get('current_fold', 0))
+    train_dataloader, val_dataloader, test_dataloader, test_df = get_data_loaders(config, fold=config.get('current_fold', 0))
 
     history = {
         "epoch": [],
@@ -780,6 +780,22 @@ def train_single_fold(config: dict):
             "test_auc_micro": test_result["auc_micro"],
         })
         exp.log_metrics(test_result["report"])
+        
+        # Save test dataset CSV to Comet ML for ensemble predictions
+        if test_df is not None:
+            # Save to temporary CSV file
+            test_csv_path = f"test_dataset_fold_{config.get('current_fold', 0)}.csv"
+            test_df.to_csv(test_csv_path, index=False)
+            
+            # Log as asset for easy download
+            exp.log_asset(test_csv_path, file_name=f"test_dataset_fold_{config.get('current_fold', 0)}.csv")
+            
+            logger.info(f"Test dataset for fold {config.get('current_fold', 0)} saved to Comet ML")
+            
+            # Clean up temporary file
+            import os
+            if os.path.exists(test_csv_path):
+                os.remove(test_csv_path)
 
     logger.info("Training finished successfully!")
     
