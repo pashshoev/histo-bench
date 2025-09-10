@@ -100,7 +100,7 @@ class MILDataset(Dataset):
                     patch_indices = np.random.choice(num_patches, size=num_samples, replace=False)
                     features = features[patch_indices]
                 
-                logger.info(f"Feature shape: {features.shape}, Label shape: {label_tensor.shape}")
+                # logger.info(f"Feature shape: {features.shape}, Label shape: {label_tensor.shape}")
                 return features, label_tensor
 
             except Exception as e:
