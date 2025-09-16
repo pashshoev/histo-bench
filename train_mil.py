@@ -777,6 +777,8 @@ def train_single_fold(config: dict):
             "test_loss": test_result["loss"],
             "test_auc_macro": test_result["auc_macro"],
             "test_auc_micro": test_result["auc_micro"],
+            "test_accuracy": test_result["report"]["accuracy"],
+            "test_weighted_f1": test_result["report"]["weighted avg"]["f1-score"],
         })
         exp.log_metrics(test_result["report"])
         
