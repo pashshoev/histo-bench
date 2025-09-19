@@ -1,15 +1,22 @@
 #!/bin/bash
 
-# Configuration
-MANIFEST_FILE="example_data/TCGA-Lung/manifest/manifest_LUAD.txt"
+# Downloading
+MANIFEST_FILE="experiments/TCGA-Lung/manifests/manifest_LUNG.txt"
 BATCH_SIZE=100
-TOTAL_SLIDES=543
 START_INDEX=0
-END_INDEX=542
-DATA_DIR="data/TCGA-LUAD"
-GCS_BUCKET="gs://histo-bench/TCGA-Lung"
+END_INDEX=1055 # the last index is excluded in processing, so add +1
+DATA_DIR="data/TCGA-Lung"
+
+# Patching
+PATCH_SIZE=512
+STEP_SIZE=512
+PATCH_LEVEL=0
+
+# Feature extraction
+NUM_WORKERS=12
+PATCH_BATCH_SIZE=32
 DEVICE="cuda"
-MODEL_NAME="ResNet50"
+MODEL_NAME="PLIP"
 HF_TOKEN="hf_..."
 
 # Calculate number of batches for display
@@ -47,9 +54,9 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $((END_INDEX - 1))); do
         --source "$DATA_DIR/slides" \
         --save_dir "$DATA_DIR/coordinates" \
         --preset "CLAM/presets/tcga.csv" \
-        --patch_size 512 \
-        --step_size 512 \
-        --patch_level 0 \
+        --patch_size $PATCH_SIZE \
+        --step_size $STEP_SIZE \
+        --patch_level $PATCH_LEVEL \
         --seg --patch --stitch \
         --log_level INFO
     echo "[MAIN] Patch creation completed. Waiting 5 seconds..."
@@ -63,27 +70,27 @@ for start_idx in $(seq $START_INDEX $BATCH_SIZE $((END_INDEX - 1))); do
         --wsi_meta_data_path "$DATA_DIR/coordinates/process_list_autogen.csv" \
         --features_dir "$DATA_DIR/features/$MODEL_NAME" \
         --device "$DEVICE" \
-        --patch_batch_size 32 \
-        --num_workers 12 \
+        --patch_batch_size $PATCH_BATCH_SIZE \
+        --num_workers $NUM_WORKERS \
         --model_name "$MODEL_NAME" \
         --hf_token "$HF_TOKEN"
     echo "[MAIN] Feature extraction completed. Waiting 5 seconds..."
     sleep 5
     
-    # 4. Upload features and coordinates to GCS
-    echo "[MAIN] UPLOADING TO GOOGLE CLOUD STORAGE..."
-    gcloud storage cp --recursive "$DATA_DIR/features/$MODEL_NAME/"* "$GCS_BUCKET/features/$MODEL_NAME/"
-    gcloud storage cp --recursive "$DATA_DIR/coordinates/patches/"* "$GCS_BUCKET/patches/"
-    echo "[MAIN] GCS upload completed. Waiting 5 seconds..."
-    sleep 5
+    # 4. Upload features and coordinates to GCS, don't need it for now
+    # echo "[MAIN] UPLOADING TO GOOGLE CLOUD STORAGE..."
+    # gcloud storage cp --recursive "$DATA_DIR/features/$MODEL_NAME/"* "$GCS_BUCKET/features/$MODEL_NAME/"
+    # gcloud storage cp --recursive "$DATA_DIR/coordinates/patches/"* "$GCS_BUCKET/patches/"
+    # echo "[MAIN] GCS upload completed. Waiting 5 seconds..."
+    # sleep 5
     
-    # 5. Remove local slides, coordinates and features
-    echo "[MAIN] CLEANING UP LOCAL FILES..."
-    rm -rf "$DATA_DIR/slides"
-    rm -rf "$DATA_DIR/coordinates"
-    rm -rf "$DATA_DIR/features"
-    echo "[MAIN] Cleanup completed. Waiting 5 seconds..."
-    sleep 5
+    # 5. Remove local slides, coordinates and features, don't need it for now
+    # echo "[MAIN] CLEANING UP LOCAL FILES..."
+    # rm -rf "$DATA_DIR/slides"
+    # rm -rf "$DATA_DIR/coordinates"
+    # rm -rf "$DATA_DIR/features"
+    # echo "[MAIN] Cleanup completed. Waiting 5 seconds..."
+    # sleep 5
     
     echo "=== Batch $current_batch completed ==="
     echo ""
