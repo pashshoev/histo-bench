@@ -66,3 +66,8 @@ For detailed information about the feature extraction scripts, see the configura
 
 2. Extract coordinates using CLAM
 3. Extract features using the scripts above
+
+
+# Known setup problems:
+- For ROCm GPUs install correct version of torch
+- torch version must be >= 2.6 to load pretrained FMs

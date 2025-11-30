@@ -7,19 +7,19 @@
 # cd "$(dirname "$0")/.."
 
 # Hyperparameters
-NUM_EPOCHS_VALUES=(25)
-LEARNING_RATE_VALUES=(0.0001 0.001)
-WEIGHT_DECAY_VALUES=(0 0.001)
-HIDDEN_DIM=(512 1024) # Not used for MeanPooling
-DROPOUT=(0 0.3) # Not used for MeanPooling
-PATCH_SAMPLING_RATIO_VALUES=(0.1 0.25 0.5 0.75 1.0) # Fraction of patches to sample per slide
+NUM_EPOCHS_VALUES=(50)
+LEARNING_RATE_VALUES=(0.0001)
+WEIGHT_DECAY_VALUES=(0)
+HIDDEN_DIM=(512) # Not used for MeanPooling
+DROPOUT=(0) # Not used for MeanPooling
+PATCH_SAMPLING_RATIO_VALUES=(0.01 0.1 1.0) # Fraction of patches to sample per slide
 BATCH_SIZE=1
-VALIDATION_SIZE=0.3
-SINGLE_FOLD_TEST_SIZE=0.3
+VALIDATION_SIZE=0.2
+SINGLE_FOLD_TEST_SIZE=0.2
 
 # Model configuration
 FEATURE_DIM=2048
-MODEL_NAMES=("MeanPooling" "ABMIL" "TransMIL" "CLAM_MB" "WiKG")
+MODEL_NAMES=("ABMIL" "CLAM_MB" "WiKG" "TransMIL")
 NUM_OF_CLASSES=2
 
 # Training configuration
@@ -28,26 +28,27 @@ RANDOM_SEED=42
 VALIDATION_RATE=100
 
 # Data configuration
-FEATURE_DIR="data/TCGA-Lung/features/ResNet50"
-METADATA_PATH="experiments/TCGA-Lung/training_labels.csv"
-NUM_WORKERS=11
+FEATURE_DIR="data/TCGA-NSCLC/features/ResNet50"
+METADATA_PATH="experiments/TCGA-NSCLC/training_labels.csv"
+NUM_WORKERS=20
 
 # Logging configuration
-BASE_EXPERIMENT_NAME="TCGA-Lung-ResNet50"
-EXPERIMENT_NAME="TCGA-Lung-ResNet50"
+# IMPORTANT: DO NOT FORGET TO SET ENV VARIABLE COMET_API_KEY
+BASE_EXPERIMENT_NAME="TCGA-NSCLC"
+EXPERIMENT_NAME="TCGA-NSCLC-ResNet50"
 USE_WEIGHTED_SAMPLER=false
 DISABLE_PROGRESS_BAR=false
 
 # Cross-validation configuration
-N_FOLDS=1
+N_FOLDS=5
 
 # Early stopping configuration
-EARLY_STOPPING_PATIENCE=5  # Number of epochs to wait before early stopping (None to disable)
+EARLY_STOPPING_PATIENCE=10  # Number of epochs to wait before early stopping (None to disable)
 EARLY_STOPPING_MIN_DELTA=0.001  # Minimum change in validation loss to qualify as improvement
 EARLY_STOPPING_RESTORE_BEST_WEIGHTS=true  # Restore model weights from best epoch
 
 # EMA configuration
-EMA_ALPHA=0.9
+EMA_ALPHA=0.8
 
 
 # Grid search loops

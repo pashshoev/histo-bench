@@ -10,14 +10,6 @@ aiohttp==3.12.15
     # via torch-geometric
 aiosignal==1.4.0
     # via aiohttp
-alembic==1.16.4
-    # via mlflow
-altair==5.5.0
-    # via streamlit
-annotated-types==0.7.0
-    # via pydantic
-anyio==4.9.0
-    # via starlette
 async-timeout==5.0.1
     # via aiohttp
 attrs==25.3.0
@@ -25,39 +17,13 @@ attrs==25.3.0
     #   aiohttp
     #   jsonschema
     #   referencing
-blinker==1.9.0
-    # via
-    #   flask
-    #   streamlit
-boto3==1.40.31
-    # via -r requirements.in
-botocore==1.40.31
-    # via
-    #   boto3
-    #   s3transfer
-cachetools==5.5.2
-    # via
-    #   google-auth
-    #   mlflow-skinny
-    #   mlflow-tracing
-    #   streamlit
 certifi==2025.6.15
     # via
     #   requests
     #   sentry-sdk
 charset-normalizer==3.4.2
     # via requests
-click==8.2.1
-    # via
-    #   flask
-    #   mlflow-skinny
-    #   streamlit
-    #   uvicorn
-cloudpickle==3.1.1
-    # via mlflow-skinny
 comet-ml==3.50.0
-    # via -r requirements.in
-conch @ git+https://github.com/Mahmoodlab/CONCH.git@141cc09c7d4ff33d8eda562bd75169b457f71a62
     # via -r requirements.in
 configobj==5.0.9
     # via everett
@@ -65,12 +31,6 @@ contourpy==1.3.2
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-databricks-sdk==0.62.0
-    # via
-    #   mlflow-skinny
-    #   mlflow-tracing
-docker==7.1.0
-    # via mlflow
 dotenv==0.9.9
     # via -r requirements.in
 dulwich==0.24.1
@@ -79,19 +39,11 @@ einops==0.8.1
     # via nystrom-attention
 everett[ini]==3.1.0
     # via comet-ml
-exceptiongroup==1.3.0
-    # via anyio
-fastapi==0.116.0
-    # via
-    #   -r requirements.in
-    #   mlflow-skinny
 filelock==3.18.0
     # via
     #   huggingface-hub
     #   torch
     #   transformers
-flask==3.1.1
-    # via mlflow
 fonttools==4.58.5
     # via matplotlib
 frozenlist==1.7.0
@@ -103,52 +55,8 @@ fsspec==2025.5.1
     #   huggingface-hub
     #   torch
     #   torch-geometric
-ftfy==6.3.1
-    # via conch
-gitdb==4.0.12
-    # via gitpython
-gitpython==3.1.44
-    # via
-    #   mlflow-skinny
-    #   streamlit
-google-api-core==2.25.1
-    # via
-    #   google-cloud-core
-    #   google-cloud-storage
-google-auth==2.40.3
-    # via
-    #   databricks-sdk
-    #   google-api-core
-    #   google-cloud-core
-    #   google-cloud-storage
-google-cloud-core==2.4.3
-    # via google-cloud-storage
-google-cloud-storage==3.1.1
-    # via -r requirements.in
-google-crc32c==1.7.1
-    # via
-    #   google-cloud-storage
-    #   google-resumable-media
-google-resumable-media==2.7.2
-    # via google-cloud-storage
-googleapis-common-protos==1.70.0
-    # via google-api-core
-graphene==3.4.3
-    # via mlflow
-graphql-core==3.2.6
-    # via
-    #   graphene
-    #   graphql-relay
-graphql-relay==3.2.0
-    # via graphene
-gunicorn==23.0.0
-    # via mlflow
-h11==0.16.0
-    # via uvicorn
 h5py==3.14.0
-    # via
-    #   -r requirements.in
-    #   conch
+    # via -r requirements.in
 hf-xet==1.1.5
     # via huggingface-hub
 huggingface-hub==0.33.2
@@ -159,90 +67,55 @@ huggingface-hub==0.33.2
     #   transformers
 idna==3.10
     # via
-    #   anyio
     #   requests
     #   yarl
 imbalanced-learn==0.12.4
     # via -r requirements.in
-importlib-metadata==8.7.0
-    # via
-    #   mlflow-skinny
-    #   opentelemetry-api
-itsdangerous==2.2.0
-    # via flask
 jinja2==3.1.6
     # via
-    #   altair
-    #   flask
-    #   pydeck
     #   torch
     #   torch-geometric
-jmespath==1.0.1
-    # via
-    #   boto3
-    #   botocore
 joblib==1.5.1
     # via
     #   imbalanced-learn
     #   scikit-learn
 jsonschema==4.24.0
-    # via
-    #   altair
-    #   comet-ml
+    # via comet-ml
 jsonschema-specifications==2025.4.1
     # via jsonschema
 kiwisolver==1.4.8
     # via matplotlib
 loguru==0.7.3
     # via -r requirements.in
-mako==1.3.10
-    # via alembic
 markdown-it-py==3.0.0
     # via rich
 markupsafe==3.0.2
-    # via
-    #   flask
-    #   jinja2
-    #   mako
-    #   werkzeug
+    # via jinja2
 matplotlib==3.10.3
     # via
     #   -r requirements.in
-    #   mlflow
     #   seaborn
 mdurl==0.1.2
     # via markdown-it-py
-mlflow==3.2.0
-    # via -r requirements.in
-mlflow-skinny==3.2.0
-    # via mlflow
-mlflow-tracing==3.2.0
-    # via mlflow
 mpmath==1.3.0
     # via sympy
 multidict==6.6.3
     # via
     #   aiohttp
     #   yarl
-narwhals==1.45.0
-    # via altair
 networkx==3.4.2
     # via torch
 numpy==2.2.6
     # via
-    #   conch
     #   contourpy
     #   h5py
     #   imbalanced-learn
     #   matplotlib
-    #   mlflow
     #   opencv-python
     #   pandas
-    #   pydeck
     #   scikit-learn
     #   scipy
     #   seaborn
-    #   streamlit
     #   torch-geometric
     #   torchvision
     #   transformers
@@ -254,79 +127,29 @@ openslide-bin==4.0.0.8
     # via -r requirements.in
 openslide-python==1.4.2
     # via -r requirements.in
-opentelemetry-api==1.36.0
-    # via
-    #   mlflow-skinny
-    #   mlflow-tracing
-    #   opentelemetry-sdk
-    #   opentelemetry-semantic-conventions
-opentelemetry-sdk==1.36.0
-    # via
-    #   mlflow-skinny
-    #   mlflow-tracing
-opentelemetry-semantic-conventions==0.57b0
-    # via opentelemetry-sdk
 packaging==25.0
     # via
-    #   altair
-    #   gunicorn
     #   huggingface-hub
     #   matplotlib
-    #   mlflow-skinny
-    #   mlflow-tracing
-    #   streamlit
     #   transformers
 pandas==2.3.0
     # via
     #   -r requirements.in
-    #   conch
-    #   mlflow
     #   seaborn
-    #   streamlit
 pillow==11.3.0
     # via
     #   -r requirements.in
     #   matplotlib
     #   openslide-python
-    #   streamlit
     #   torchvision
 propcache==0.3.2
     # via
     #   aiohttp
     #   yarl
-proto-plus==1.26.1
-    # via google-api-core
-protobuf==6.31.1
-    # via
-    #   google-api-core
-    #   googleapis-common-protos
-    #   mlflow-skinny
-    #   mlflow-tracing
-    #   proto-plus
-    #   streamlit
 psutil==7.0.0
     # via
     #   comet-ml
     #   torch-geometric
-pyarrow==20.0.0
-    # via
-    #   mlflow
-    #   streamlit
-pyasn1==0.6.1
-    # via
-    #   pyasn1-modules
-    #   rsa
-pyasn1-modules==0.4.2
-    # via google-auth
-pydantic==2.11.7
-    # via
-    #   fastapi
-    #   mlflow-skinny
-    #   mlflow-tracing
-pydantic-core==2.33.2
-    # via pydantic
-pydeck==0.9.1
-    # via streamlit
 pygments==2.19.2
     # via rich
 pyparsing==3.2.3
@@ -337,8 +160,6 @@ python-box==6.1.0
     # via comet-ml
 python-dateutil==2.9.0.post0
     # via
-    #   botocore
-    #   graphene
     #   matplotlib
     #   pandas
 python-dotenv==1.1.1
@@ -349,7 +170,6 @@ pyyaml==6.0.2
     # via
     #   -r requirements.in
     #   huggingface-hub
-    #   mlflow-skinny
     #   timm
     #   transformers
 referencing==0.36.2
@@ -357,20 +177,12 @@ referencing==0.36.2
     #   jsonschema
     #   jsonschema-specifications
 regex==2024.11.6
-    # via
-    #   conch
-    #   transformers
+    # via transformers
 requests==2.32.4
     # via
     #   comet-ml
-    #   databricks-sdk
-    #   docker
-    #   google-api-core
-    #   google-cloud-storage
     #   huggingface-hub
-    #   mlflow-skinny
     #   requests-toolbelt
-    #   streamlit
     #   torch-geometric
     #   transformers
 requests-toolbelt==1.0.0
@@ -381,10 +193,6 @@ rpds-py==0.26.0
     # via
     #   jsonschema
     #   referencing
-rsa==4.9.1
-    # via google-auth
-s3transfer==0.14.0
-    # via boto3
 safetensors==0.5.3
     # via
     #   timm
@@ -392,14 +200,11 @@ safetensors==0.5.3
 scikit-learn==1.7.0
     # via
     #   -r requirements.in
-    #   conch
     #   imbalanced-learn
-    #   mlflow
 scipy==1.15.3
     # via
     #   -r requirements.in
     #   imbalanced-learn
-    #   mlflow
     #   scikit-learn
 seaborn==0.13.2
     # via -r requirements.in
@@ -411,44 +216,19 @@ simplejson==3.20.1
     # via comet-ml
 six==1.17.0
     # via python-dateutil
-smmap==5.0.2
-    # via gitdb
-sniffio==1.3.1
-    # via anyio
-sqlalchemy==2.0.42
-    # via
-    #   alembic
-    #   mlflow
-sqlparse==0.5.3
-    # via mlflow-skinny
-starlette==0.46.2
-    # via fastapi
-streamlit==1.46.1
-    # via -r requirements.in
 sympy==1.14.0
     # via torch
-tenacity==9.1.2
-    # via streamlit
 threadpoolctl==3.6.0
     # via
     #   imbalanced-learn
     #   scikit-learn
 timm==1.0.16
-    # via
-    #   -r requirements.in
-    #   conch
+    # via -r requirements.in
 tokenizers==0.21.2
-    # via
-    #   conch
-    #   transformers
-toml==0.10.2
-    # via streamlit
-tomli==2.2.1
-    # via alembic
+    # via transformers
 torch==2.7.1
     # via
     #   -r requirements.in
-    #   conch
     #   nystrom-attention
     #   timm
     #   torchvision
@@ -461,10 +241,7 @@ torchsummary==1.5.1
 torchvision==0.22.1
     # via
     #   -r requirements.in
-    #   conch
     #   timm
-tornado==6.5.1
-    # via streamlit
 tqdm==4.67.1
     # via
     #   -r requirements.in
@@ -472,58 +249,26 @@ tqdm==4.67.1
     #   torch-geometric
     #   transformers
 transformers==4.53.1
-    # via
-    #   -r requirements.in
-    #   conch
+    # via -r requirements.in
 typing-extensions==4.14.1
     # via
     #   aiosignal
-    #   alembic
-    #   altair
-    #   anyio
     #   dulwich
-    #   exceptiongroup
-    #   fastapi
-    #   graphene
     #   huggingface-hub
-    #   mlflow-skinny
     #   multidict
-    #   opentelemetry-api
-    #   opentelemetry-sdk
-    #   opentelemetry-semantic-conventions
-    #   pydantic
-    #   pydantic-core
     #   referencing
-    #   sqlalchemy
-    #   streamlit
     #   torch
-    #   typing-inspection
-    #   uvicorn
-typing-inspection==0.4.1
-    # via pydantic
 tzdata==2025.2
     # via pandas
 urllib3==2.5.0
     # via
-    #   botocore
     #   comet-ml
-    #   docker
     #   dulwich
     #   requests
     #   sentry-sdk
-uvicorn==0.35.0
-    # via
-    #   -r requirements.in
-    #   mlflow-skinny
-wcwidth==0.2.13
-    # via ftfy
-werkzeug==3.1.3
-    # via flask
 wrapt==1.17.2
     # via comet-ml
 wurlitzer==3.1.1
     # via comet-ml
 yarl==1.20.1
     # via aiohttp
-zipp==3.23.0
-    # via importlib-metadata

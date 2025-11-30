@@ -11,13 +11,11 @@ import copy
 from tqdm import tqdm
 from loguru import logger
 from torch.utils.data import DataLoader
-from sklearn.model_selection import GroupShuffleSplit
 from sklearn.metrics import classification_report, roc_auc_score
 from torch.nn.functional import softmax
 import matplotlib.pyplot as plt
-import mlflow
 
-from scripts.models.MIL.abmil2 import ABMIL
+from scripts.models.MIL.abmil import ABMIL
 from scripts.models.MIL.transmil import TransMIL
 from scripts.models.MIL.mil_dataset import MILDataset, filter_data
 from scripts.models.MIL.mean_pooling import MeanPooling

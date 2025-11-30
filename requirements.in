@@ -12,8 +12,6 @@ pillow
 torchsummary
 tqdm
 loguru
-google-cloud-storage
-streamlit
 opencv-python
 matplotlib
 scikit-learn
@@ -21,13 +19,7 @@ imbalanced-learn
 scipy
 huggingface-hub
 timm
-fastapi
-uvicorn
-mlflow
 comet-ml
 nystrom-attention
 torch-geometric
-git+https://github.com/Mahmoodlab/CONCH.git@141cc09c7d4ff33d8eda562bd75169b457f71a62#egg=conch
-
 seaborn
-boto3
