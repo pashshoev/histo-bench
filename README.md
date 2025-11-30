@@ -24,15 +24,7 @@ This will:
 - Upgrade pip
 - Install all packages from `requirements.txt`
 
-### Optional: Install CONCH Encoder
-
-To use the CONCH encoder model, install it separately:
-
-```bash
-make install_conch
-```
-
-**Note:** CONCH and other encoders (PLIP, UNI) are downloaded from Hugging Face and may require access via a Hugging Face account. Please refer to the official Hugging Face model pages (see [Step 3: Extract Features](#step-3-extract-features)) to request access and obtain authentication tokens.
+**Note:** Encoders (PLIP, UNI, CONCH) are downloaded from Hugging Face and may require access via a Hugging Face account. Please refer to the official Hugging Face model pages (see [Step 3: Extract Features](#step-3-extract-features)) to request access and obtain authentication tokens.
 
 ## Quick Start
 
@@ -228,7 +220,7 @@ python extract_features.py \
 - **ResNet50**: Standard CNN backbone (ImageNet pretrained), no token required
 - **PLIP**: Lightweight CLIP model for pathology, requires HF token. Model: [`vinid/plip`](https://huggingface.co/vinid/plip)
 - **UNI**: Transformer model optimized for histopathology, requires HF token. Model: [`MahmoodLab/UNI`](https://huggingface.co/MahmoodLab/UNI)
-- **CONCH**: Contrastive learning-based model, requires HF token and separate installation. Model: [`MahmoodLab/conch`](https://huggingface.co/MahmoodLab/conch)
+- **CONCH**: Contrastive learning-based model, requires HF token. Model: [`MahmoodLab/conch`](https://huggingface.co/MahmoodLab/conch)
 
 **Note:** Encoders are downloaded from Hugging Face, and model owners may require access via a Hugging Face account. Please refer to the official Hugging Face model pages linked above to request access and obtain the necessary authentication token.
 
