@@ -5,7 +5,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, message="Importing fro
 import torch
 import torch.nn as nn
 
-from scripts.models.vision.base import BaseEncoder, ModelName
+from scripts.models.encoder.base import BaseEncoder, ModelName
 from conch.open_clip_custom import create_model_from_pretrained
 
 

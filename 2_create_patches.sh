@@ -3,7 +3,7 @@ DATA_DIR="data/TCGA-NSCLC"
 # Patching
 PATCH_SIZE=512
 STEP_SIZE=512
-PATCH_LEVEL=1
+PATCH_LEVEL=0
 
 echo "[MAIN] CREATING PATCHES..."
 PYTHONPATH=. python -u CLAM/create_patches_fp.py \

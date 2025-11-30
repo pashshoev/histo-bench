@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
-from scripts.models.vision.base import BaseEncoder, ModelName
+from scripts.models.encoder.base import BaseEncoder, ModelName
 
 
 class ResNetEncoder(BaseEncoder, nn.Module):

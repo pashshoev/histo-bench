@@ -13,11 +13,11 @@ import torch.nn as nn
 from torchvision import transforms
 from scripts.data_preparation.patch_dataset import (PatchDatasetFromWSI,
                                                     WSIDataset)
-from scripts.models.vision.resnet import ResNetEncoder
-from scripts.models.vision.uni import UNIEncoder
-from scripts.models.vision.conch import CONCHEncoder
-from scripts.models.vision.plip import PLIPEncoder
-from scripts.models.vision.base import ModelName
+from scripts.models.encoder.resnet import ResNetEncoder
+from scripts.models.encoder.uni import UNIEncoder
+from scripts.models.encoder.conch import CONCHEncoder
+from scripts.models.encoder.plip import PLIPEncoder
+from scripts.models.encoder.base import ModelName
 
 
 def load_config(config_path):

@@ -4,7 +4,7 @@
 # Downloading
 MANIFEST_FILE="experiments/TCGA-NSCLC/manifest_LUAD_LUSC.txt"
 START_INDEX=0
-END_INDEX=1
+END_INDEX=10
 DATA_DIR="data/TCGA-NSCLC"
 
 # 1. Download slides for this batch

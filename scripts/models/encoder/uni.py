@@ -5,7 +5,7 @@ from torchvision import transforms
 import timm
 
 from huggingface_hub import hf_hub_download
-from scripts.models.vision.base import BaseEncoder, ModelName
+from scripts.models.encoder.base import BaseEncoder, ModelName
 
 
 class UNIEncoder(BaseEncoder, nn.Module):
